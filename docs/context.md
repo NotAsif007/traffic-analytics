@@ -51,20 +51,27 @@ This backend platform receives observations from distributed traffic cameras, as
   - `PATCH /api/v1/observations/{id}/status`: Lifecycle transition with validation.
   - `POST /api/v1/observations/bulk`: High-throughput bulk ingestion (up to 500 records) with pre-fetched batch validations and itemized acceptance/rejection reporting.
 
-### Phase 10 — Real-Time Event Processing [COMPLETE ✅]
-- **Standardized Domain Event Abstraction**: Versioned event contract (`DomainEvent`) supporting event ID, event type (`VEHICLE_OBSERVED`, `PLATE_RECOGNIZED`, `TRACK_UPDATED`, `VEHICLE_MATCHED`, `TRAJECTORY_UPDATED`, `ALERT_CREATED`, `OBSERVATION_FAILED`), timestamp, source, payload, and idempotency key.
-- **Resilient Event Bus & Graceful Fallback**:
-  - `EventBus` ABC ([`app/events/interfaces.py`](file:///d:/traffic-analytics/app/events/interfaces.py)): Decouples publishing and subscriptions.
-  - `ResilientEventBus` ([`app/events/redis_bus.py`](file:///d:/traffic-analytics/app/events/redis_bus.py)): Publishes to Redis pub/sub streams when available; automatically and silently falls back to in-memory event dispatching if Redis is temporarily offline.
-  - `InMemoryEventBus` ([`app/events/in_memory.py`](file:///d:/traffic-analytics/app/events/in_memory.py)): Thread-safe local pub/sub bus with LRU-based idempotent deduplication.
-- **Dead-Letter Diagnostics & Fault Recovery**:
-  - `InMemoryDeadLetterStore` ([`app/events/in_memory.py`](file:///d:/traffic-analytics/app/events/in_memory.py)): Captures failed events with stack traces, error messages, retry counts, and resolution endpoints.
-- **End-to-End Event Coordination**:
-  - `EventCoordinator` ([`app/events/coordinator.py`](file:///d:/traffic-analytics/app/events/coordinator.py)): Orchestrates continuous pipeline flow: Observation Ingestion $\to$ Watchlist Blacklist Matching $\to$ Single-Camera Tracking $\to$ Cross-Camera Association $\to$ Trajectory Update $\to$ Real-Time Alert Generation.
-- **Event APIs**:
-  - `POST /api/v1/events/publish`: Publish events to the real-time event bus.
-  - `GET /api/v1/events/dead-letter`: Query dead-letter diagnostic records.
-  - `POST /api/v1/events/dead-letter/{record_id}/resolve`: Mark dead-letter event as resolved.
+### Phase 11 — Evaluation and Benchmarking [COMPLETE ✅]
+- **Measurable Scientific Benchmarking Subsystem**: Built non-fabricated quantitative evaluation subsystem computing standard metrics against deterministic ground-truth city scenarios.
+- **ANPR Layer Evaluation** (`ANPREvaluator` in [`app/evaluation/anpr_eval.py`](file:///d:/traffic-analytics/app/evaluation/anpr_eval.py)):
+  - Plate detection precision, recall, and F1 score.
+  - Exact plate accuracy, normalized plate accuracy, and character-level accuracy.
+  - Mean OCR confidence score.
+- **Tracking Layer Evaluation** (`TrackingEvaluator` in [`app/evaluation/tracking_eval.py`](file:///d:/traffic-analytics/app/evaluation/tracking_eval.py)):
+  - Multi-Object Tracking Accuracy (MOTA).
+  - Identification F1 Score (IDF1).
+  - ID Switches (IDSW), mostly tracked (MT), and mostly lost (ML) tracks.
+- **Cross-Camera Association Evaluation** (`AssociationEvaluator` in [`app/evaluation/association_eval.py`](file:///d:/traffic-analytics/app/evaluation/association_eval.py)):
+  - Evaluates against ground-truth vehicle journeys: True Positives, False Positives (cross-vehicle merges), False Negatives (trajectory fragmentation).
+  - Association precision, recall, F1 score, and end-to-end trajectory completeness rate.
+- **Alert & Anomaly Engine Evaluation** (`AlertEvaluator` in [`app/evaluation/alert_eval.py`](file:///d:/traffic-analytics/app/evaluation/alert_eval.py)):
+  - Evaluates blacklist matches, travel time speed violations, and route heading anomalies.
+  - Alert precision, recall, F1 score, and False Positive Rate (FPR).
+- **Synthetic City Benchmark Dataset** (`generate_synthetic_benchmark()` in [`app/evaluation/dataset.py`](file:///d:/traffic-analytics/app/evaluation/dataset.py)):
+  - Deterministic dataset: 8 cameras, 35 vehicles, multiple routes, 5 OCR character substitutions, 4 missing/unreadable plates, 3 blacklisted vehicles, 3 speed anomalies, 2 route anomalies, and similar-looking vehicle pairs.
+- **Benchmarking Tools & APIs**:
+  - CLI Tool: [`tools/run_benchmark.py`](file:///d:/traffic-analytics/tools/run_benchmark.py) (supports formatted terminal summaries and `--json` export).
+  - API Endpoints: `GET /api/v1/evaluation/benchmark`, `POST /api/v1/evaluation/run`.
 
 ---
 
@@ -72,6 +79,8 @@ This backend platform receives observations from distributed traffic cameras, as
 
 | Decision | Reason |
 |---|---|
+| Non-Fabricated Evaluation Metrics | All metrics are computed strictly by evaluating real algorithmic components against deterministic ground-truth journeys |
+| Standardized Scientific MOT Metrics | Uses MOTA, IDF1, and ID Switches for tracking validation |
 | Resilient Event Bus with Redis Fallback | Guarantees the system operates 100% reliably even if Redis is unreachable or during maintenance |
 | Idempotency Key Deduplication | Prevents double-processing and double-counting during network retries and high-throughput bursts |
 | Dead-Letter Diagnostic Storage | Unhandled handler errors are isolated with stack traces without breaking the event pipeline |
@@ -108,6 +117,14 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/models/vehicle_identity.py` | VehicleIdentity and VehicleMatch models |
 | `app/models/trajectory.py` | Trajectory and TrajectoryPoint models |
 | `app/models/alert.py` | Alert and BlacklistEntry models |
+| `app/evaluation/contracts.py` | Ground truth schemas and EvaluationReport model |
+| `app/evaluation/dataset.py` | Synthetic city benchmark dataset generator |
+| `app/evaluation/anpr_eval.py` | ANPR precision, recall, character accuracy calculator |
+| `app/evaluation/tracking_eval.py` | MOTA, IDF1, and ID Switches calculator |
+| `app/evaluation/association_eval.py` | Association precision, recall, and trajectory completeness calculator |
+| `app/evaluation/alert_eval.py` | Alert precision, recall, and false-positive rate calculator |
+| `app/evaluation/runner.py` | Full-system benchmark runner |
+| `tools/run_benchmark.py` | CLI benchmark executable tool |
 | `app/events/contracts.py` | DomainEvent, EventType, DeadLetterRecord contracts |
 | `app/events/interfaces.py` | EventBus and DeadLetterStore ABC interfaces |
 | `app/events/in_memory.py` | InMemoryEventBus and InMemoryDeadLetterStore |
@@ -126,6 +143,7 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/services/analytics.py` | Analytics calculation engine |
 | `app/services/vehicle_identity.py` | Cross-camera association service & hypothesis management |
 | `app/services/trajectory.py` | Trajectory lifecycle, transition validation & timeline reconstruction |
+| `app/api/v1/evaluation.py` | Benchmark evaluation report endpoints |
 | `app/api/v1/events.py` | Real-time event publishing & dead-letter queue endpoints |
 | `app/api/v1/alerts.py` | Alerts endpoints (list, get, acknowledge, resolve, dismiss) |
 | `app/api/v1/blacklist.py` | Watchlist management endpoints |
@@ -138,5 +156,5 @@ This backend platform receives observations from distributed traffic cameras, as
 ---
 
 ## Test Status
-- **Unit Tests:** 107 passing (`pytest tests/unit/ -v`)
+- **Unit Tests:** 113 passing (`pytest tests/unit/ -v`)
 - **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`, `analytics`, `alerts`, `blacklist`, `events`)

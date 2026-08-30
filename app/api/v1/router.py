@@ -17,6 +17,7 @@ from app.api.v1 import (
     blacklist,
     camera_connections,
     cameras,
+    evaluation,
     events,
     health,
     identities,
@@ -61,3 +62,6 @@ router.include_router(alerts.router)
 
 # Phase 10 — Real-time event processing & dead-letter queue
 router.include_router(events.router)
+
+# Phase 11 — Evaluation and benchmarking
+router.include_router(evaluation.router)
