@@ -2,7 +2,7 @@
 
 **Project:** PS 26127 — SIH 2026  
 **Title:** City-Wide AI Engine for Multi-Camera ANPR Trajectory Tracking and Urban Traffic Analytics  
-**Current Phase:** Phase 4 — ANPR Integration Layer Complete  
+**Current Phase:** Real-World Indian Traffic Datasets & Benchmarking Complete  
 **Last updated:** 2026-08-30
 
 ---
@@ -56,13 +56,25 @@ This backend platform receives observations from distributed traffic cameras, as
   - **Stack**: React 19, TypeScript, Vite, Tailwind CSS (Midnight Command Theme), Lucide Icons, Leaflet / React-Leaflet GIS engine, Recharts data visualization, Axios API client.
   - **7 Core Operational Views**:
     1. `OverviewView.tsx`: Live command-center KPI metrics, real-time congestion hotspot meters, and live security activity stream.
-    2. `MapView.tsx`: Fullscreen GIS map displaying camera nodes with intensity color rings, road network vector lines, live moving trajectory lines, alert pins, and camera detail stream inspection.
+    2. `MapView.tsx`: Fullscreen GIS map displaying camera nodes with intensity color rings, road network vector lines, live moving trajectory lines, alert pins, and camera detail stream inspection (Esri World Dark Canvas basemap).
     3. `InvestigationView.tsx`: Law enforcement vehicle dossier with high-contrast license plate badge, multi-camera step-by-step journey timeline (segment transit durations, speeds in $km/h$), and raw OCR plate observation evidence gallery with image crops.
     4. `AlertsView.tsx`: Filterable security incident console with deep forensic explainability case file and interactive lifecycle buttons (Acknowledge, Operator Resolution with audit notes, Dismiss).
     5. `AnalyticsView.tsx`: 24-hour volume trend area chart, Greenshields density ($k = q / v_s$) & LOS rating, congested corridor ranking, Origin-Destination flow matrix, and frequent route chains.
     6. `WatchlistView.tsx`: Watchlist / Blacklist management with monitored vehicles list and "Add to Watchlist" modal.
-    7. `BenchmarkView.tsx`: Scientific evaluation suite displaying quantitative ANPR, MOT tracking, association, and alert metrics with live "Run Benchmark" trigger.
-  - **API Service Layer (`frontend/src/services/api.ts`)**: Connects directly to FastAPI backend with Vite reverse proxy and comprehensive mock fallback data for immediate zero-config demoing.
+    7. `BenchmarkView.tsx`: Scientific evaluation suite with dual-mode testing (Synthetic City vs Real Indian Datasets).
+
+### Phase 13 — Real Indian Traffic Datasets & Ingestion Engine [COMPLETE ✅]
+- **Supported Research Datasets**:
+  1. **UVH-26**: Indian CCTV surveillance vehicle detection parser (Auto-rickshaws, motorcycles, mini-buses, commercial trucks).
+  2. **ITD (Indian Traffic Dataset)**: Static camera video sequences and density telemetry parser under monsoon rain and day/night illumination.
+  3. **Indian License Plate Dataset**: Real ANPR ground truth across 36 state/UT codes (`KA`, `MH`, `DL`, `TN`, `KL`, `UP`, `WB`), HSRP plates, 2-line layouts, and font variations.
+  4. **RoundaboutHD**: Multi-camera synchronized network for cross-camera trajectory tracking and vehicle re-identification.
+  5. **Indian Road Driving Dataset (IRDD / IDD)**: Unstructured Indian traffic driving scenes with heavy occlusion, mixed-vehicle density, and non-lane driving.
+- **Dataset Adapters Subsystem (`app/datasets/`)**:
+  - Modular `BaseDatasetAdapter` converting native dataset formats into standard API schemas.
+  - CLI loader & streaming tool `tools/import_real_dataset.py`.
+- **Real-World Evaluation Suite (`app/evaluation/real_dataset_eval.py`)**:
+  - Measures Indian ANPR accuracy, HSRP embossing recognition, heterogeneous vehicle class F1, and RoundaboutHD multi-camera tracking.
 
 ---
 
@@ -70,6 +82,8 @@ This backend platform receives observations from distributed traffic cameras, as
 
 | Decision | Reason |
 |---|---|
+| Pluggable Real-World Dataset Adapters | Converts diverse external datasets (UVH-26, ITD, IRDD, RoundaboutHD) into standard platform events without altering core schemas |
+| Heterogeneous Indian Vehicle Class Mapping | Explicitly accommodates auto-rickshaws, two-wheelers, and commercial vehicles prevalent in Indian traffic |
 | Read-Optimized Dedicated Schemas | Decouples internal database representations from frontend requirements, ensuring optimal serialization speed and security |
 | Non-Fabricated Evaluation Metrics | All metrics are computed strictly by evaluating real algorithmic components against deterministic ground-truth journeys |
 | Standardized Scientific MOT Metrics | Uses MOTA, IDF1, and ID Switches for tracking validation |
@@ -82,16 +96,6 @@ This backend platform receives observations from distributed traffic cameras, as
 | Stored-Data Derived Analytics | All metrics are computed strictly from real DB observations, connections, and trajectories |
 | Deterministic Trajectory Reconstruction | Trajectory generation is purely deterministic given ordered observations |
 | Multi-Signal Scoring over Plate Equality | Real-world ANPR suffers from weather, occlusions, and OCR confusion; multi-signal reasoning is resilient |
-| Track ID vs Vehicle Identity | A track is local to a single camera stream; a vehicle identity is global across the road network |
-| Spatio-Temporal Candidate Gating | Prevents $O(N^2)$ comparison explosion by gating candidates on connected road graph travel windows |
-| Pluggable Tracker & Detector ABCs | Allows seamless swapping of AI models without touching domain models |
-| Async SQLAlchemy (asyncpg) | Required for high-throughput ingestion without thread pool exhaustion |
-| Confidence-first Data Model | AI outputs are uncertain; never treat OCR or detection as ground truth |
-| Source + Source_Obs_ID Idempotency | Prevents double-counting from inference pipelines and retries |
-| Object storage paths for media | Avoids database bloat; keeps DB lean for indexing and queries |
-| Trigram index on plate_text | Enables efficient sub-string and partial plate queries |
-| PostGIS GIST indexes | Allows fast spatial proximity queries (`ST_DWithin`) |
-| Domain exceptions separate from HTTP | Domain layer has no FastAPI coupling — cleanly testable in isolation |
 
 ---
 
@@ -101,49 +105,23 @@ This backend platform receives observations from distributed traffic cameras, as
 |---|---|
 | `app/main.py` | FastAPI application factory + lifespan |
 | `app/config.py` | Central configuration via Pydantic Settings |
-| `app/models/road.py` | Road model with PostGIS LINESTRING |
-| `app/models/camera.py` | Camera model with PostGIS POINT |
-| `app/models/camera_connection.py` | CameraConnection directed graph edge |
-| `app/models/vehicle_observation.py` | VehicleObservation event model |
-| `app/models/vehicle_track.py` | VehicleTrack and TrackPoint models |
-| `app/models/vehicle_identity.py` | VehicleIdentity and VehicleMatch models |
-| `app/models/trajectory.py` | Trajectory and TrajectoryPoint models |
-| `app/models/alert.py` | Alert and BlacklistEntry models |
-| `app/schemas/dashboard.py` | Read-optimized Command Center schemas (Overview, Map, Investigation, Analytics) |
-| `app/services/dashboard.py` | Read-optimized consolidation engine for dashboard views |
-| `app/api/v1/dashboard.py` | Command center endpoints (/overview, /map, /investigate/..., /analytics/summary) |
-| `app/evaluation/contracts.py` | Ground truth schemas and EvaluationReport model |
-| `app/evaluation/dataset.py` | Synthetic city benchmark dataset generator |
-| `app/evaluation/runner.py` | Full-system benchmark runner |
-| `tools/run_benchmark.py` | CLI benchmark executable tool |
-| `app/events/contracts.py` | DomainEvent, EventType, DeadLetterRecord contracts |
-| `app/events/interfaces.py` | EventBus and DeadLetterStore ABC interfaces |
-| `app/events/coordinator.py` | End-to-end pipeline coordinator across all subsystems |
-| `app/schemas/road.py` | Road schemas & GeoJSON types |
-| `app/schemas/camera.py` | Camera schemas & status validation |
-| `app/schemas/camera_connection.py` | CameraConnection schemas & integrity rules |
-| `app/schemas/vehicle_observation.py` | VehicleObservation schemas & bulk types |
-| `app/schemas/vehicle_track.py` | VehicleTrack & TrackPoint schemas & filters |
-| `app/schemas/vehicle_identity.py` | VehicleIdentity & VehicleMatch schemas & explainability |
-| `app/schemas/trajectory.py` | Trajectory & TrajectoryPoint schemas, filters, and timeline types |
-| `app/schemas/analytics.py` | Urban Traffic Analytics schemas |
-| `app/schemas/alert.py` | Alert and BlacklistEntry schemas & action requests |
-| `app/services/alert.py` | Alert and anomaly detection service with lifecycle transitions |
-| `app/services/analytics.py` | Analytics calculation engine |
-| `app/services/vehicle_identity.py` | Cross-camera association service & hypothesis management |
-| `app/services/trajectory.py` | Trajectory lifecycle, transition validation & timeline reconstruction |
-| `app/api/v1/evaluation.py` | Benchmark evaluation report endpoints |
-| `app/api/v1/events.py` | Real-time event publishing & dead-letter queue endpoints |
-| `app/api/v1/alerts.py` | Alerts endpoints (list, get, acknowledge, resolve, dismiss) |
-| `app/api/v1/blacklist.py` | Watchlist management endpoints |
-| `app/api/v1/analytics.py` | Analytics endpoints |
-| `app/api/v1/trajectories.py` | Trajectory endpoints |
-| `app/api/v1/vehicles.py` | Vehicle identity trajectory lookup endpoint |
-| `alembic/versions/0007_create_alerts_and_blacklist.py` | DB migration for alerts & blacklist |
-| `tools/seed_city.py` | Synthetic city network seed script |
+| `app/datasets/base.py` | Base abstract DatasetAdapter contract & parsed schema |
+| `app/datasets/uvh26_adapter.py` | UVH-26 Indian CCTV vehicle detection parser |
+| `app/datasets/itd_adapter.py` | ITD static camera traffic sequence parser |
+| `app/datasets/indian_plate_adapter.py` | Indian license plate ANPR/OCR parser (HSRP & state codes) |
+| `app/datasets/roundabout_adapter.py` | RoundaboutHD multi-camera tracking parser |
+| `app/datasets/irdd_adapter.py` | Indian Road Driving Dataset (IRDD/IDD) parser |
+| `app/datasets/__init__.py` | Dataset registry & helper exports |
+| `app/evaluation/real_dataset_eval.py` | Real-world Indian traffic evaluation suite |
+| `tools/import_real_dataset.py` | CLI dataset importer & live API streamer |
+| `tools/doctor.py` | One-command system health & diagnostics CLI |
+| `frontend/src/components/BenchmarkView.tsx` | Scientific benchmarking UI with dual-mode evaluation |
+| `frontend/src/components/DiagnosticsModal.tsx` | In-browser developer console and test injector |
 
 ---
 
 ## Test Status
-- **Unit Tests:** 117 passing (`pytest tests/unit/ -v`)
+- **Unit Tests:** 124 passing (`pytest tests/unit/ -v`)
+- **Linter:** Clean 0 errors (`ruff check .`)
+- **Frontend Build:** Clean compilation (`npm run build` in 1.25s)
 - **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`, `analytics`, `alerts`, `blacklist`, `events`, `dashboard`)

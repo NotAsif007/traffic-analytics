@@ -1,0 +1,80 @@
+{
+  "dataset": "RoundaboutHD",
+  "cameras": [
+    {
+      "id": "11111111-1111-1111-1111-111111111101",
+      "name": "ROUNDABOUT-NORTH-ENTRY"
+    },
+    {
+      "id": "11111111-1111-1111-1111-111111111102",
+      "name": "ROUNDABOUT-CIRCULATING"
+    },
+    {
+      "id": "11111111-1111-1111-1111-111111111103",
+      "name": "ROUNDABOUT-SOUTH-EXIT"
+    }
+  ],
+  "multi_camera_tracks": [
+    {
+      "global_vehicle_id": "GLOBAL-VEH-001",
+      "license_plate": "KA01AB1234",
+      "vehicle_class": "car",
+      "vehicle_color": "white",
+      "camera_sightings": [
+        {
+          "camera_name": "ROUNDABOUT-NORTH-ENTRY",
+          "local_track_id": "L-TRK-101",
+          "timestamp": "2026-08-30T09:30:00Z",
+          "bounding_box": [0.15, 0.20, 0.45, 0.55],
+          "detection_confidence": 0.98,
+          "speed_kmh": 32.0,
+          "zone": "entry_ramp"
+        },
+        {
+          "camera_name": "ROUNDABOUT-CIRCULATING",
+          "local_track_id": "L-TRK-205",
+          "timestamp": "2026-08-30T09:30:15Z",
+          "bounding_box": [0.35, 0.30, 0.65, 0.65],
+          "detection_confidence": 0.97,
+          "speed_kmh": 28.0,
+          "zone": "circulating_ring"
+        },
+        {
+          "camera_name": "ROUNDABOUT-SOUTH-EXIT",
+          "local_track_id": "L-TRK-312",
+          "timestamp": "2026-08-30T09:30:35Z",
+          "bounding_box": [0.45, 0.40, 0.75, 0.75],
+          "detection_confidence": 0.99,
+          "speed_kmh": 40.0,
+          "zone": "exit_chute"
+        }
+      ]
+    },
+    {
+      "global_vehicle_id": "GLOBAL-VEH-002",
+      "license_plate": "KA04MH7788",
+      "vehicle_class": "auto_rickshaw",
+      "vehicle_color": "yellow_green",
+      "camera_sightings": [
+        {
+          "camera_name": "ROUNDABOUT-NORTH-ENTRY",
+          "local_track_id": "L-TRK-102",
+          "timestamp": "2026-08-30T09:31:00Z",
+          "bounding_box": [0.20, 0.25, 0.40, 0.50],
+          "detection_confidence": 0.95,
+          "speed_kmh": 25.0,
+          "zone": "entry_ramp"
+        },
+        {
+          "camera_name": "ROUNDABOUT-CIRCULATING",
+          "local_track_id": "L-TRK-208",
+          "timestamp": "2026-08-30T09:31:20Z",
+          "bounding_box": [0.40, 0.35, 0.60, 0.60],
+          "detection_confidence": 0.96,
+          "speed_kmh": 22.0,
+          "zone": "circulating_ring"
+        }
+      ]
+    }
+  ]
+}

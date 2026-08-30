@@ -1,4 +1,9 @@
-// Complete TypeScript definitions matching FastAPI backend contracts
+export interface BoundingBox {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
 
 export interface CongestionHotspot {
   corridor_name: string;
@@ -11,12 +16,12 @@ export interface CongestionHotspot {
 }
 
 export interface RecentActivityItem {
-  activity_type: string;
+  activity_type: 'ALERT' | 'TRAJECTORY' | 'CAMERA_STATUS' | 'CONGESTION';
   title: string;
   description: string;
   timestamp: string;
   camera_name?: string | null;
-  severity: string;
+  severity?: 'low' | 'moderate' | 'high' | 'critical';
 }
 
 export interface CityOverviewResponse {
@@ -55,26 +60,33 @@ export interface MapRoadSegment {
 
 export interface MapTrajectoryLine {
   trajectory_id: string;
-  vehicle_identity_id: string;
+  identity_id?: string;
+  vehicle_identity_id?: string;
   canonical_plate?: string | null;
-  coordinates: number[][];
-  confidence: number;
-  start_time: string;
-  last_seen_time: string;
-  total_distance_m: number;
-  camera_names: string[];
+  vehicle_class?: string | null;
+  confidence?: number;
+  status?: string;
+  coordinates: [number, number][];
+  current_speed_kmh?: number | null;
+  start_time?: string;
+  last_seen_time?: string;
+  total_distance_m?: number;
+  camera_names?: string[];
 }
 
 export interface MapAlertMarker {
-  id: string;
+  id?: string;
+  alert_id?: string;
   alert_code: string;
   alert_type: string;
+  title?: string;
   severity: 'low' | 'moderate' | 'high' | 'critical';
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude: number;
+  longitude: number;
   camera_name?: string | null;
-  title: string;
-  timestamp: string;
+  description?: string;
+  created_at?: string;
+  timestamp?: string;
 }
 
 export interface LiveMapResponse {
@@ -139,44 +151,58 @@ export interface AlertInvestigationResponse {
   alert_code: string;
   alert_type: string;
   severity: 'low' | 'moderate' | 'high' | 'critical';
-  status: string;
+  status: 'NEW' | 'ACKNOWLEDGED' | 'RESOLVED' | 'DISMISSED';
   confidence: number;
   title: string;
   description: string;
   created_at: string;
-  acknowledged_at?: string | null;
-  acknowledged_by?: string | null;
-  resolved_at?: string | null;
-  resolved_by?: string | null;
-  resolution_notes?: string | null;
+  camera_id?: string | null;
+  camera_name?: string | null;
   vehicle_identity_id?: string | null;
   canonical_plate?: string | null;
-  cameras_involved: CameraBrief[];
   evidence: Record<string, any>;
-  trajectory_summary?: MapTrajectoryLine | null;
+  cameras_involved: CameraBrief[];
+  resolution_notes?: string | null;
+}
+
+export interface HourlyVolumePoint {
+  bucket: string;
+  total: number;
+  cars?: number;
+  two_wheelers?: number;
+  buses?: number;
+  trucks?: number;
+  classes?: {
+    car?: number;
+    bike?: number;
+    two_wheeler?: number;
+    bus?: number;
+    truck?: number;
+    auto_rickshaw?: number;
+  };
+}
+
+export interface OriginDestinationFlow {
+  origin_zone: string;
+  destination_zone: string;
+  trip_count: number;
+  avg_travel_time_s: number;
+}
+
+export interface FrequentRoute {
+  route_key?: string;
+  camera_sequence: string[];
+  frequency_count: number;
+  avg_travel_time_s: number;
 }
 
 export interface DashboardAnalyticsSummaryResponse {
   generated_at: string;
   total_vehicles_past_24h: number;
-  hourly_volume_trend: {
-    bucket: string;
-    total: number;
-    classes: Record<string, number>;
-  }[];
+  hourly_volume_trend: HourlyVolumePoint[];
   top_congested_corridors: CongestionHotspot[];
-  top_frequent_routes: {
-    route_key: string;
-    camera_sequence: string[];
-    frequency_count: number;
-    avg_travel_time_s: number;
-  }[];
-  top_od_flows: {
-    origin_zone: string;
-    destination_zone: string;
-    trip_count: number;
-    avg_travel_time_s: number;
-  }[];
+  top_od_flows: OriginDestinationFlow[];
+  top_frequent_routes: FrequentRoute[];
 }
 
 export interface AlertItem {
@@ -245,4 +271,55 @@ export interface EvaluationReport {
     false_positive_rate: number;
   };
   overall_composite_score: number;
+}
+
+export interface DatasetSummary {
+  dataset_name: string;
+  dataset_code: string;
+  description: string;
+  total_frames_or_sequences: number;
+  total_observations: number;
+  unique_vehicles: number;
+  supported_classes: string[];
+  has_license_plates: boolean;
+  has_multi_camera_ids: boolean;
+}
+
+export interface IndianANPRMetrics {
+  total_samples: number;
+  exact_match_accuracy: number;
+  normalized_match_accuracy: number;
+  state_code_accuracy: number;
+  character_accuracy: number;
+  mean_ocr_confidence: number;
+  hsrp_recognition_rate: number;
+}
+
+export interface IndianClassMetrics {
+  vehicle_class: string;
+  sample_count: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+}
+
+export interface MultiCameraTrackingMetrics {
+  total_global_vehicles: number;
+  total_camera_handovers: number;
+  successful_associations: number;
+  association_precision: number;
+  association_recall: number;
+  cross_camera_f1: number;
+  trajectory_completeness: number;
+}
+
+export interface RealDatasetEvaluationReport {
+  timestamp: string;
+  datasets_evaluated: string[];
+  anpr_metrics: IndianANPRMetrics;
+  classification_breakdown: IndianClassMetrics[];
+  overall_mean_classification_f1: number;
+  multicamera_metrics: MultiCameraTrackingMetrics;
+  robustness_score: number;
+  composite_indian_readiness_score: number;
 }

@@ -1,0 +1,70 @@
+{
+  "dataset": "UVH-26",
+  "camera_id": "11111111-1111-1111-1111-111111111101",
+  "camera_name": "UVH26-BLR-CCTV-01",
+  "location": "Silk Board Junction, Bengaluru",
+  "frames": [
+    {
+      "frame_id": "F001",
+      "timestamp": "2026-08-30T09:00:00Z",
+      "detections": [
+        {
+          "vehicle_id": "UVH-V01",
+          "track_id": "TRK-01",
+          "class": "auto_rickshaw",
+          "color": "yellow_green",
+          "confidence": 0.96,
+          "bbox": [0.12, 0.35, 0.28, 0.65],
+          "license_plate": "KA01E4521",
+          "plate_confidence": 0.94
+        },
+        {
+          "vehicle_id": "UVH-V02",
+          "track_id": "TRK-02",
+          "class": "motorcycle",
+          "color": "black",
+          "confidence": 0.98,
+          "bbox": [0.32, 0.42, 0.44, 0.72],
+          "license_plate": "KA05HR8899",
+          "plate_confidence": 0.91
+        },
+        {
+          "vehicle_id": "UVH-V03",
+          "track_id": "TRK-03",
+          "class": "bus",
+          "color": "blue_white",
+          "confidence": 0.99,
+          "bbox": [0.55, 0.15, 0.92, 0.85],
+          "license_plate": "KA57F1200",
+          "plate_confidence": 0.97
+        }
+      ]
+    },
+    {
+      "frame_id": "F002",
+      "timestamp": "2026-08-30T09:00:05Z",
+      "detections": [
+        {
+          "vehicle_id": "UVH-V01",
+          "track_id": "TRK-01",
+          "class": "auto_rickshaw",
+          "color": "yellow_green",
+          "confidence": 0.97,
+          "bbox": [0.18, 0.32, 0.34, 0.62],
+          "license_plate": "KA01E4521",
+          "plate_confidence": 0.95
+        },
+        {
+          "vehicle_id": "UVH-V04",
+          "track_id": "TRK-04",
+          "class": "car",
+          "color": "white",
+          "confidence": 0.95,
+          "bbox": [0.40, 0.30, 0.65, 0.68],
+          "license_plate": "KA01MJ4040",
+          "plate_confidence": 0.98
+        }
+      ]
+    }
+  ]
+}
