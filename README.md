@@ -294,26 +294,44 @@ python tools/seed_city.py
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-- **Interactive Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc UI**: `http://localhost:8000/redoc`
-- **OpenAPI Schema**: `http://localhost:8000/api/v1/openapi.json`
+### 3. Frontend Web Dashboard Setup
+
+The interactive Command Center dashboard is located in `frontend/`:
+
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start Vite development server (port 3000)
+npm run dev
+
+# Or build for production
+npm run build
+```
+
+- **Live Command Center Dashboard**: `http://localhost:3000` (automatically proxies `/api` calls to `http://localhost:8000`).
 
 ---
 
 ## 🧪 Testing & Code Quality
 
 ```bash
-# Run full unit test suite (117 tests)
+# Backend unit tests (117 tests)
 pytest tests/unit/ -v
 
-# Run with test coverage report
+# Backend code coverage report
 pytest tests/unit/ -v --cov=app --cov-report=term-missing
 
-# Run Ruff linter and formatter checks
+# Python linter and formatter checks
 ruff check .
 ruff format --check .
 
-# Run full synthetic city evaluation benchmark
+# Frontend production build verification
+cd frontend && npm run build && cd ..
+
+# Full synthetic city evaluation benchmark
 python tools/run_benchmark.py
 ```
 
@@ -350,6 +368,14 @@ traffic-analytics/
 │   ├── context.md                   # Living architectural context log
 │   ├── spec.md                      # Technical specification
 │   └── architecture.md              # Architecture reference
+├── frontend/                        # React 19 + TypeScript + Vite + Tailwind Dashboard
+│   ├── src/
+│   │   ├── components/              # Overview, Map, Dossier, Alerts, Analytics, Watchlist
+│   │   ├── services/api.ts          # Axios API service client with fallback data
+│   │   ├── types/api.ts             # TypeScript definitions matching backend contracts
+│   │   └── App.tsx                  # Main layout and tab router
+│   ├── package.json
+│   └── vite.config.ts
 ├── docker-compose.yml               # Multi-container orchestration
 ├── Dockerfile                       # Production multi-stage Docker build
 └── pyproject.toml                   # Dependencies, Ruff & Pytest configuration

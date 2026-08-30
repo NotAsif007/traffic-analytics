@@ -51,19 +51,18 @@ This backend platform receives observations from distributed traffic cameras, as
   - `PATCH /api/v1/observations/{id}/status`: Lifecycle transition with validation.
   - `POST /api/v1/observations/bulk`: High-throughput bulk ingestion (up to 500 records) with pre-fetched batch validations and itemized acceptance/rejection reporting.
 
-### Phase 12 — Command Center API Integration [COMPLETE ✅]
-- **Read-Optimized Command Center Views**:
-  - `CityOverviewResponse` ([`app/schemas/dashboard.py`](file:///d:/traffic-analytics/app/schemas/dashboard.py)): Summary of active cameras, total vehicles observed today, network traffic level, active/critical alerts count, congestion hotspots, and recent activity feed.
-  - `LiveMapResponse` ([`app/schemas/dashboard.py`](file:///d:/traffic-analytics/app/schemas/dashboard.py)): GIS layers for Leaflet/Mapbox with camera intensity markers, road LineStrings, moving vehicle trajectory paths, and alert pins.
-  - `VehicleInvestigationResponse` ([`app/schemas/dashboard.py`](file:///d:/traffic-analytics/app/schemas/dashboard.py)): Complete law enforcement vehicle dossier with camera history timeline, travel speeds, raw OCR plate detections, confidence scores, and crop image paths.
-  - `AlertInvestigationResponse` ([`app/schemas/dashboard.py`](file:///d:/traffic-analytics/app/schemas/dashboard.py)): Forensic dossier containing full explainability evidence, multi-camera trajectory context, and involved cameras.
-  - `DashboardAnalyticsSummaryResponse` ([`app/schemas/dashboard.py`](file:///d:/traffic-analytics/app/schemas/dashboard.py)): Executive overview aggregating 24-hour volume trend, top congested corridors, frequent routes, and OD flow matrix.
-- **Dashboard APIs**:
-  - `GET /api/v1/dashboard/overview`
-  - `GET /api/v1/dashboard/map`
-  - `GET /api/v1/dashboard/investigate/vehicle/{identity_id}`
-  - `GET /api/v1/dashboard/investigate/alert/{alert_id}`
-  - `GET /api/v1/dashboard/analytics/summary`
+### Phase 12 & Frontend — Command Center Dashboard & UI Integration [COMPLETE ✅]
+- **Production React + TypeScript Frontend Application (`frontend/`)**:
+  - **Stack**: React 19, TypeScript, Vite, Tailwind CSS (Midnight Command Theme), Lucide Icons, Leaflet / React-Leaflet GIS engine, Recharts data visualization, Axios API client.
+  - **7 Core Operational Views**:
+    1. `OverviewView.tsx`: Live command-center KPI metrics, real-time congestion hotspot meters, and live security activity stream.
+    2. `MapView.tsx`: Fullscreen GIS map displaying camera nodes with intensity color rings, road network vector lines, live moving trajectory lines, alert pins, and camera detail stream inspection.
+    3. `InvestigationView.tsx`: Law enforcement vehicle dossier with high-contrast license plate badge, multi-camera step-by-step journey timeline (segment transit durations, speeds in $km/h$), and raw OCR plate observation evidence gallery with image crops.
+    4. `AlertsView.tsx`: Filterable security incident console with deep forensic explainability case file and interactive lifecycle buttons (Acknowledge, Operator Resolution with audit notes, Dismiss).
+    5. `AnalyticsView.tsx`: 24-hour volume trend area chart, Greenshields density ($k = q / v_s$) & LOS rating, congested corridor ranking, Origin-Destination flow matrix, and frequent route chains.
+    6. `WatchlistView.tsx`: Watchlist / Blacklist management with monitored vehicles list and "Add to Watchlist" modal.
+    7. `BenchmarkView.tsx`: Scientific evaluation suite displaying quantitative ANPR, MOT tracking, association, and alert metrics with live "Run Benchmark" trigger.
+  - **API Service Layer (`frontend/src/services/api.ts`)**: Connects directly to FastAPI backend with Vite reverse proxy and comprehensive mock fallback data for immediate zero-config demoing.
 
 ---
 
