@@ -17,6 +17,7 @@ from app.api.v1 import (
     blacklist,
     camera_connections,
     cameras,
+    events,
     health,
     identities,
     matches,
@@ -57,3 +58,6 @@ router.include_router(analytics.router)
 # Phase 9 — Alert and anomaly engine
 router.include_router(blacklist.router)
 router.include_router(alerts.router)
+
+# Phase 10 — Real-time event processing & dead-letter queue
+router.include_router(events.router)

@@ -51,25 +51,20 @@ This backend platform receives observations from distributed traffic cameras, as
   - `PATCH /api/v1/observations/{id}/status`: Lifecycle transition with validation.
   - `POST /api/v1/observations/bulk`: High-throughput bulk ingestion (up to 500 records) with pre-fetched batch validations and itemized acceptance/rejection reporting.
 
-### Phase 9 — Alert and Anomaly Engine [COMPLETE ✅]
-- **Confidence-Aware Alerting System**: Generates explainable, evidence-preserving alerts for threat detection and traffic anomalies without making speculative legal/criminal accusations.
-- **Alert Types**:
-  - `BLACKLIST_MATCH`: Plate observed on a camera matches an active `BlacklistEntry` (exact or fuzzy), preserving OCR confidence, similarity metrics, camera evidence, and timestamp.
-  - `ROUTE_ANOMALY`: Unexpected camera transition, unexpected/opposing direction, or unusual route relative to road network.
-  - `TRAVEL_TIME_ANOMALY`: Speed violation or extreme delay relative to expected transit time.
-  - `CAMERA_OFFLINE`: Inactivity exceeding threshold (> 30 min without observations).
-  - `UNUSUAL_VEHICLE_PATTERN`: Anomalous circulation or repetitive back-and-forth pattern.
-- **Alert & Blacklist Entities**:
-  - `BlacklistEntry` ([`app/models/alert.py`](file:///d:/traffic-analytics/app/models/alert.py)): Target watchlist plate, reason, priority (`low`, `medium`, `high`, `critical`), validity period, and active status.
-  - `Alert` ([`app/models/alert.py`](file:///d:/traffic-analytics/app/models/alert.py)): Alert with `alert_code`, `alert_type`, `severity`, `status` (`NEW`, `ACKNOWLEDGED`, `RESOLVED`, `DISMISSED`), `confidence`, structured `evidence` JSONB, and lifecycle audit fields.
-  - Migration: [`alembic/versions/0007_create_alerts_and_blacklist.py`](file:///d:/traffic-analytics/alembic/versions/0007_create_alerts_and_blacklist.py).
-- **Alert APIs**:
-  - `GET /api/v1/alerts`: List alerts with multi-criteria filtering (type, severity, status, camera, identity, confidence, time range).
-  - `GET /api/v1/alerts/{id}`: Detailed alert with complete explainability evidence.
-  - `POST /api/v1/alerts/{id}/acknowledge`: Mark alert as acknowledged with operator audit note.
-  - `POST /api/v1/alerts/{id}/resolve`: Mark alert as resolved.
-  - `POST /api/v1/alerts/{id}/dismiss`: Dismiss alert with reason.
-  - `POST /api/v1/blacklist`, `GET /api/v1/blacklist`, `GET /api/v1/blacklist/{id}`, `PATCH /api/v1/blacklist/{id}`: Watchlist management.
+### Phase 10 — Real-Time Event Processing [COMPLETE ✅]
+- **Standardized Domain Event Abstraction**: Versioned event contract (`DomainEvent`) supporting event ID, event type (`VEHICLE_OBSERVED`, `PLATE_RECOGNIZED`, `TRACK_UPDATED`, `VEHICLE_MATCHED`, `TRAJECTORY_UPDATED`, `ALERT_CREATED`, `OBSERVATION_FAILED`), timestamp, source, payload, and idempotency key.
+- **Resilient Event Bus & Graceful Fallback**:
+  - `EventBus` ABC ([`app/events/interfaces.py`](file:///d:/traffic-analytics/app/events/interfaces.py)): Decouples publishing and subscriptions.
+  - `ResilientEventBus` ([`app/events/redis_bus.py`](file:///d:/traffic-analytics/app/events/redis_bus.py)): Publishes to Redis pub/sub streams when available; automatically and silently falls back to in-memory event dispatching if Redis is temporarily offline.
+  - `InMemoryEventBus` ([`app/events/in_memory.py`](file:///d:/traffic-analytics/app/events/in_memory.py)): Thread-safe local pub/sub bus with LRU-based idempotent deduplication.
+- **Dead-Letter Diagnostics & Fault Recovery**:
+  - `InMemoryDeadLetterStore` ([`app/events/in_memory.py`](file:///d:/traffic-analytics/app/events/in_memory.py)): Captures failed events with stack traces, error messages, retry counts, and resolution endpoints.
+- **End-to-End Event Coordination**:
+  - `EventCoordinator` ([`app/events/coordinator.py`](file:///d:/traffic-analytics/app/events/coordinator.py)): Orchestrates continuous pipeline flow: Observation Ingestion $\to$ Watchlist Blacklist Matching $\to$ Single-Camera Tracking $\to$ Cross-Camera Association $\to$ Trajectory Update $\to$ Real-Time Alert Generation.
+- **Event APIs**:
+  - `POST /api/v1/events/publish`: Publish events to the real-time event bus.
+  - `GET /api/v1/events/dead-letter`: Query dead-letter diagnostic records.
+  - `POST /api/v1/events/dead-letter/{record_id}/resolve`: Mark dead-letter event as resolved.
 
 ---
 
@@ -77,6 +72,9 @@ This backend platform receives observations from distributed traffic cameras, as
 
 | Decision | Reason |
 |---|---|
+| Resilient Event Bus with Redis Fallback | Guarantees the system operates 100% reliably even if Redis is unreachable or during maintenance |
+| Idempotency Key Deduplication | Prevents double-processing and double-counting during network retries and high-throughput bursts |
+| Dead-Letter Diagnostic Storage | Unhandled handler errors are isolated with stack traces without breaking the event pipeline |
 | Objective Explainable Alert Wording | System uses telemetry facts ("Route anomaly detected") rather than subjective accusations ("Criminal activity") |
 | Evidence Preservation in JSONB | Every alert stores the raw signal values and match confidences for courtroom auditing |
 | Fundamental Traffic Flow Theory for Density | Density is mathematically grounded ($k = q / v_s$) with explicit methodology definitions |
@@ -110,6 +108,11 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/models/vehicle_identity.py` | VehicleIdentity and VehicleMatch models |
 | `app/models/trajectory.py` | Trajectory and TrajectoryPoint models |
 | `app/models/alert.py` | Alert and BlacklistEntry models |
+| `app/events/contracts.py` | DomainEvent, EventType, DeadLetterRecord contracts |
+| `app/events/interfaces.py` | EventBus and DeadLetterStore ABC interfaces |
+| `app/events/in_memory.py` | InMemoryEventBus and InMemoryDeadLetterStore |
+| `app/events/redis_bus.py` | ResilientEventBus with Redis connection & in-memory fallback |
+| `app/events/coordinator.py` | End-to-end pipeline coordinator across all subsystems |
 | `app/schemas/road.py` | Road schemas & GeoJSON types |
 | `app/schemas/camera.py` | Camera schemas & status validation |
 | `app/schemas/camera_connection.py` | CameraConnection schemas & integrity rules |
@@ -123,6 +126,7 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/services/analytics.py` | Analytics calculation engine |
 | `app/services/vehicle_identity.py` | Cross-camera association service & hypothesis management |
 | `app/services/trajectory.py` | Trajectory lifecycle, transition validation & timeline reconstruction |
+| `app/api/v1/events.py` | Real-time event publishing & dead-letter queue endpoints |
 | `app/api/v1/alerts.py` | Alerts endpoints (list, get, acknowledge, resolve, dismiss) |
 | `app/api/v1/blacklist.py` | Watchlist management endpoints |
 | `app/api/v1/analytics.py` | Analytics endpoints |
@@ -134,5 +138,5 @@ This backend platform receives observations from distributed traffic cameras, as
 ---
 
 ## Test Status
-- **Unit Tests:** 102 passing (`pytest tests/unit/ -v`)
-- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`, `analytics`, `alerts`, `blacklist`)
+- **Unit Tests:** 107 passing (`pytest tests/unit/ -v`)
+- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`, `analytics`, `alerts`, `blacklist`, `events`)
