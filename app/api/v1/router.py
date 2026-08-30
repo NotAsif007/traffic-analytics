@@ -11,7 +11,7 @@ Adding a new resource:
 
 from fastapi import APIRouter
 
-from app.api.v1 import camera_connections, cameras, health, observations, roads
+from app.api.v1 import camera_connections, cameras, health, observations, roads, tracks
 
 router = APIRouter()
 
@@ -26,7 +26,10 @@ router.include_router(camera_connections.router)
 # Phase 3 — Observation ingestion
 router.include_router(observations.router)
 
-# Phase 4+ placeholders:
+# Phase 5 — Single-camera tracking
+router.include_router(tracks.router)
+
+# Phase 6+ placeholders:
 # router.include_router(vehicles.router)
 # router.include_router(blacklist.router)
 # router.include_router(alerts.router)

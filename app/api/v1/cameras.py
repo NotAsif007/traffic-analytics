@@ -74,7 +74,32 @@ async def update_camera(
     return await svc.update_camera(camera_id, payload)
 
 
+from app.schemas.vehicle_track import VehicleTrackResponse
+from app.services.vehicle_track import VehicleTrackService
+
+
+def _vehicle_track_service(db: DBSession) -> VehicleTrackService:
+    return VehicleTrackService(db)
+
+
+VehicleTrackServiceDep = Annotated[VehicleTrackService, Depends(_vehicle_track_service)]
+
+
 @router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_camera(camera_id: uuid.UUID, svc: CameraServiceDep) -> None:
     """Delete a camera (its connections will be cascade-deleted)."""
     await svc.delete_camera(camera_id)
+
+
+@router.get("/{camera_id}/tracks", response_model=PaginatedResponse[VehicleTrackResponse])
+async def list_camera_tracks(
+    camera_id: uuid.UUID,
+    track_svc: VehicleTrackServiceDep,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    status: Optional[str] = Query(None, description="Filter by track status"),
+) -> PaginatedResponse[VehicleTrackResponse]:
+    """Retrieve all vehicle tracks captured by a specific camera."""
+    return await track_svc.list_camera_tracks(
+        camera_id=camera_id, status=status, page=page, page_size=page_size
+    )

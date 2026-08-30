@@ -51,13 +51,20 @@ This backend platform receives observations from distributed traffic cameras, as
   - `PATCH /api/v1/observations/{id}/status`: Lifecycle transition with validation.
   - `POST /api/v1/observations/bulk`: High-throughput bulk ingestion (up to 500 records) with pre-fetched batch validations and itemized acceptance/rejection reporting.
 
-### Phase 4 — ANPR Integration Layer [COMPLETE ✅]
-- **Inference Contracts**: Standardized Pydantic schemas (`FrameInput`, `VehicleDetectionResult`, `PlateDetectionResult`, `OCRResult`, `ObservationCandidate`) independent of any ML framework.
-- **Abstract Interfaces**: Clean ABC interfaces (`VehicleDetector`, `PlateDetector`, `PlateOCR`) allowing pluggable swap between YOLO, PaddleOCR, LPRNet, or cloud vision APIs.
-- **Traceable OCR Normalizer**: `OCRNormalizer` supporting delimiter stripping, uppercasing, configurable character confusion mapping (`O`->`0`, `I`->`1`, etc.), confidence penalties, and comprehensive step-by-step transformation audit records (`TransformationStep`).
-- **Plate Comparison & Similarity Engine**: `PlateMatcher` providing exact match, normalized match, Levenshtein edit distance, normalized string similarity, substring/partial overlap detection, and multi-signal confidence propagation.
-- **ANPR Pipeline Orchestrator**: `ANPRPipeline` turning raw frame metadata into validated `VehicleObservationCreate` domain records with proper confidence propagation and media reference tracking.
-- **Mock Inference Suite**: `MockVehicleDetector`, `MockPlateDetector`, `MockPlateOCR` providing deterministic, configurable inference simulation for unit and integration tests without GPU dependencies.
+### Phase 5 — Single-Camera Vehicle Tracking [COMPLETE ✅]
+- **Explicit Conceptual Separation**: Established clear architectural distinction between single-camera local tracks (`track_id` specific to a camera) and city-wide vehicle entities (`vehicle_identity` spanning multiple cameras).
+- **VehicleTrack & TrackPoint Entities**:
+  - `VehicleTrack` ([`app/models/vehicle_track.py`](file:///d:/traffic-analytics/app/models/vehicle_track.py)): Records camera-local continuous tracks, start/end timestamps, average confidence, points count, consolidated vehicle class, best OCR plate text, and lifecycle status (`active`, `completed`, `lost`, `terminated`).
+  - `TrackPoint` ([`app/models/vehicle_track.py`](file:///d:/traffic-analytics/app/models/vehicle_track.py)): Chronological point state with bounding box, timestamp, confidence, speed, and link to `VehicleObservation`.
+  - Migration: [`alembic/versions/0004_create_vehicle_tracks.py`](file:///d:/traffic-analytics/alembic/versions/0004_create_vehicle_tracks.py)
+- **Abstract Tracker Interface**: `SingleCameraTracker` ([`app/tracking/interfaces.py`](file:///d:/traffic-analytics/app/tracking/interfaces.py)) providing pluggable interface for ByteTrack, BoT-SORT, DeepSORT, or spatial IoU trackers.
+- **Built-in IoU Tracker**: `IoUSingleCameraTracker` ([`app/tracking/iou_tracker.py`](file:///d:/traffic-analytics/app/tracking/iou_tracker.py)) with Hungarian-style greedy IoU matching, automatic track initialization, missing frame tolerance grace period, track termination, and highest-confidence plate aggregation.
+- **Track APIs**:
+  - `GET /api/v1/tracks`: List tracks with filters (camera, status, class, plate, min confidence, time range).
+  - `GET /api/v1/tracks/{id}`: Detailed track with chronological track points.
+  - `GET /api/v1/cameras/{id}/tracks`: Tracks localized to a specific camera.
+  - `GET /api/v1/tracks/{id}/observations`: Chronological track observations.
+  - `POST /api/v1/tracks`: Direct track creation/registration endpoint.
 
 ---
 
@@ -65,6 +72,8 @@ This backend platform receives observations from distributed traffic cameras, as
 
 | Decision | Reason |
 |---|---|
+| Track ID vs Vehicle Identity | A track is local to a single camera stream; a vehicle identity is global across the road network |
+| Pluggable Tracker ABC | Allows seamless swapping between ByteTrack, BoT-SORT, or deep learning trackers without touching domain models |
 | Async SQLAlchemy (asyncpg) | Required for high-throughput ingestion without thread pool exhaustion |
 | Confidence-first Data Model | AI outputs are uncertain; never treat OCR or detection as ground truth |
 | Source + Source_Obs_ID Idempotency | Prevents double-counting from inference pipelines and retries |
@@ -87,24 +96,22 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/models/camera.py` | Camera model with PostGIS POINT |
 | `app/models/camera_connection.py` | CameraConnection directed graph edge |
 | `app/models/vehicle_observation.py` | VehicleObservation event model |
+| `app/models/vehicle_track.py` | VehicleTrack and TrackPoint models |
 | `app/schemas/road.py` | Road schemas & GeoJSON types |
 | `app/schemas/camera.py` | Camera schemas & status validation |
 | `app/schemas/camera_connection.py` | CameraConnection schemas & integrity rules |
 | `app/schemas/vehicle_observation.py` | VehicleObservation schemas & bulk types |
-| `app/repositories/vehicle_observation.py` | Observation repository with multi-filter query builder |
-| `app/services/vehicle_observation.py` | Ingestion, bulk processing, and lifecycle services |
-| `app/api/v1/observations.py` | Observation endpoints (single, bulk, list, status) |
-| `alembic/versions/0003_create_vehicle_observations.py` | Phase 3 DB migration with pg_trgm & GIN index |
+| `app/schemas/vehicle_track.py` | VehicleTrack & TrackPoint schemas & filters |
+| `app/repositories/vehicle_track.py` | Track repository with query filters & point loaders |
+| `app/services/vehicle_track.py` | Track business logic & state persistence |
+| `app/api/v1/tracks.py` | Track endpoints (list, get, observations) |
+| `app/tracking/interfaces.py` | Abstract SingleCameraTracker interface |
+| `app/tracking/iou_tracker.py` | Multi-vehicle single-camera IoU tracker |
+| `alembic/versions/0004_create_vehicle_tracks.py` | DB migration for tracks & points |
 | `tools/seed_city.py` | Synthetic city network seed script |
-| `app/anpr/contracts.py` | Model-agnostic AI inference contracts & schemas |
-| `app/anpr/interfaces.py` | Abstract detector & OCR interfaces (ABCs) |
-| `app/anpr/normalizer.py` | Traceable OCR normalizer with transformation logs |
-| `app/anpr/matcher.py` | Plate comparison, edit distances, and confidence propagation |
-| `app/anpr/pipeline.py` | ANPR pipeline orchestrator converting frames to domain observations |
-| `app/anpr/mock.py` | Configurable mock vision models for deterministic automated testing |
 
 ---
 
 ## Test Status
-- **Unit Tests:** 59 passing (`pytest tests/unit/ -v`)
-- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`)
+- **Unit Tests:** 71 passing (`pytest tests/unit/ -v`)
+- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`)
