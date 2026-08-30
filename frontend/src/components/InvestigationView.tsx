@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { VehicleInvestigationResponse } from '../types/api';
 import { api } from '../services/api';
+import { IndianPlateGraphic } from './IndianPlateGraphic';
 
 interface InvestigationViewProps {
   initialSearchPlate?: string;
@@ -103,14 +104,10 @@ export const InvestigationView: React.FC<InvestigationViewProps> = ({
             <div className="flex flex-wrap items-start justify-between gap-4">
               {/* License Plate Badge & Identity */}
               <div className="flex items-center gap-4">
-                <div className="px-4 py-2 rounded bg-[#0d0d15] border-2 border-[#8083ff] shadow-[0_0_15px_rgba(128,131,255,0.2)] flex flex-col items-center">
-                  <span className="text-[10px] font-mono text-[#908fa0] uppercase tracking-widest">
-                    IND
-                  </span>
-                  <span className="text-2xl font-bold font-mono text-[#e4e1ed] tracking-wider">
-                    {dossier.canonical_plate || 'KA 01 AB 1234'}
-                  </span>
-                </div>
+                <IndianPlateGraphic
+                  plateNumber={dossier.canonical_plate || 'KA 01 AB 1234'}
+                  size="lg"
+                />
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -264,7 +261,7 @@ export const InvestigationView: React.FC<InvestigationViewProps> = ({
                     {/* Vehicle / Plate Image Crop */}
                     <div className="w-24 h-16 rounded overflow-hidden bg-[#0d0d15] border border-[#292932] shrink-0 relative">
                       <img
-                        src={obs.image_path || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=200'}
+                        src={obs.image_path || 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=300&auto=format&fit=crop&q=80'}
                         alt="Vehicle Sighting Crop"
                         className="w-full h-full object-cover"
                       />

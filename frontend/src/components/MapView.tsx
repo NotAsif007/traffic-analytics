@@ -12,6 +12,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { LiveMapResponse, MapCameraNode } from '../types/api';
+import { CCTVStreamPlayer } from './CCTVStreamPlayer';
 
 // Fix for default Leaflet icon paths in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -233,21 +234,13 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
               </button>
             </div>
 
-            {/* Live Camera Stream Mock Preview */}
-            <div className="relative rounded overflow-hidden border border-[#292932] aspect-video bg-[#0d0d15] flex items-center justify-center">
-              <img
-                src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=500"
-                alt="Camera Stream"
-                className="w-full h-full object-cover opacity-80"
-              />
-              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[#0d0d15]/80 font-mono text-[10px] text-emerald-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>RTSP LIVE</span>
-              </div>
-              <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-[#0d0d15]/80 font-mono text-[10px] text-[#908fa0]">
-                30 FPS • 1080p
-              </div>
-            </div>
+            {/* Live Indian CCTV Camera Stream Player */}
+            <CCTVStreamPlayer
+              cameraName={selectedCamera.name}
+              cameraId={selectedCamera.id}
+              intensity={selectedCamera.current_intensity}
+              observationsPerHour={selectedCamera.observations_last_hour}
+            />
 
             {/* Camera Metrics Grid */}
             <div className="grid grid-cols-2 gap-2 text-xs">
