@@ -246,53 +246,68 @@ python tools/run_benchmark.py
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Start & Environment Setup
 
-### 1. Run with Docker Compose (Recommended)
+The repository includes pre-configured environment presets for both Docker Compose and local developer environments:
+- `.env.docker`: Preset configured for containerized execution (PostgreSQL & Redis service hostnames).
+- `.env.local`: Preset configured for native local Python execution connecting to `localhost:5432` and `localhost:6379`.
+- `.env.example`: Reference documentation for all configuration parameters.
+
+---
+
+### Option 1: Full-Stack Docker Compose (Recommended)
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/NotAsif007/traffic-analytics.git
 cd traffic-analytics
 
-# Copy environment variables
-cp .env.example .env
+# 2. Use the Docker environment preset
+cp .env.docker .env
 
-# Build and start all services (PostgreSQL 16 + PostGIS, Redis 7, FastAPI App)
+# 3. Start PostgreSQL 16 + PostGIS, Redis 7, Migrations, and FastAPI API
 docker compose up --build -d
+
+# 4. Start the Frontend Command Center Dashboard
+cd frontend
+npm install
+npm run dev
 ```
 
-Verify backend health:
-```bash
-curl http://localhost:8000/api/v1/health
-```
+- **Dashboard UI**: `http://localhost:3000`
+- **Backend Health Probe**: `http://localhost:8000/api/v1/health`
+- **Swagger Documentation**: `http://localhost:8000/docs`
 
-### 2. Local Development Setup
+---
+
+### Option 2: Local Python Virtual Environment Setup
 
 ```bash
 # 1. Create and activate virtual environment
 python -m venv .venv
 
-# Windows
+# Windows (PowerShell)
 .venv\Scripts\activate
-# Linux/macOS
+# Linux / macOS
 source .venv/bin/activate
 
 # 2. Install dependencies with development tooling
 pip install -e ".[dev]"
 
-# 3. Configure local environment
-cp .env.example .env
+# 3. Use the local environment preset
+cp .env.local .env
 
-# 4. Run database migrations
+# 4. Apply database migrations
 alembic upgrade head
 
-# 5. Seed synthetic city road network & cameras
+# 5. Seed synthetic city road network & cameras (8 cameras, 35 vehicles)
 python tools/seed_city.py
 
-# 6. Start the FastAPI development server
+# 6. Start FastAPI development server (port 8000)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+---
 
 ### 3. Frontend Web Dashboard Setup
 
@@ -312,6 +327,25 @@ npm run build
 ```
 
 - **Live Command Center Dashboard**: `http://localhost:3000` (automatically proxies `/api` calls to `http://localhost:8000`).
+
+---
+
+## ⚙️ Environment Variables Reference
+
+| Variable | Default | Description |
+|---|---|---|
+| `APP_NAME` | `traffic-analytics` | Service name identifier for telemetry and logging |
+| `APP_ENV` | `development` | Environment mode (`development`, `staging`, `production`) |
+| `DEBUG` | `true` | Enables detailed SQL logging and debug exception traces |
+| `LOG_LEVEL` | `INFO` | Logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `LOG_FORMAT` | `console` | Log serialization format (`console` for dev, `json` for prod) |
+| `API_V1_PREFIX` | `/api/v1` | Root URL prefix for version 1 REST routes |
+| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated list of allowed browser origins |
+| `DATABASE_URL` | `postgresql+asyncpg://...` | Async connection string for FastAPI application pool |
+| `ALEMBIC_DATABASE_URL` | `postgresql+psycopg2://...` | Synchronous connection string for Alembic CLI migrations |
+| `DB_POOL_SIZE` | `10` | SQLAlchemy connection pool size |
+| `DB_MAX_OVERFLOW` | `5` | Maximum temporary overflow connections above pool size |
+| `REDIS_URL` | `redis://localhost:6379/0` | Connection string for Redis pub/sub and event bus |
 
 ---
 
