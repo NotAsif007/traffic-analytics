@@ -379,14 +379,14 @@ async def seed() -> None:
             )
             session.add(conn)
             await session.flush()
-            print(f"  [CREATED] Connection: {src_cid} → {dst_cid} ({min_s}-{max_s}s, {dist_m}m)")
+            print(f"  [CREATED] Connection: {src_cid} -> {dst_cid} ({min_s}-{max_s}s, {dist_m}m)")
 
         await session.commit()
-        print("\n✅ Seed complete.")
+        print("\n[SUCCESS] Seed complete.")
 
     await engine.dispose()
 
 
 if __name__ == "__main__":
-    print("🌱 Seeding city network...")
+    print("[*] Seeding city network...")
     asyncio.run(seed())
