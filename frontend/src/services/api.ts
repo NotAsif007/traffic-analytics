@@ -341,6 +341,12 @@ export const api = {
     }
   },
 
+  // Health Probe & Diagnostics
+  async checkHealth(): Promise<any> {
+    const res = await client.get('/health');
+    return res.data;
+  },
+
   // Evaluation Benchmark
   async runBenchmark(): Promise<EvaluationReport> {
     try {

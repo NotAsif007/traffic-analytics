@@ -8,7 +8,8 @@ import {
   ListOrdered,
   Cpu,
   Radio,
-  Clock
+  Clock,
+  Terminal
 } from 'lucide-react';
 
 export type TabType = 'overview' | 'map' | 'investigate' | 'alerts' | 'analytics' | 'watchlist' | 'benchmark';
@@ -18,6 +19,7 @@ interface NavbarProps {
   onTabChange: (tab: TabType) => void;
   onSearch: (query: string) => void;
   activeAlertsCount: number;
+  onOpenDiagnostics?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onTabChange,
   onSearch,
   activeAlertsCount,
+  onOpenDiagnostics,
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [timeStr, setTimeStr] = useState('');
@@ -128,6 +131,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>{timeStr || '00:00:00'}</span>
           <span className="text-[10px] text-[#908fa0]">UTC</span>
         </div>
+
+        {onOpenDiagnostics && (
+          <button
+            onClick={onOpenDiagnostics}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#1f1f27] hover:bg-[#292932] border border-[#34343d] text-[#c0c1ff] text-xs font-mono transition-colors cursor-pointer"
+            title="Open System Diagnostics & Debug Console"
+          >
+            <Terminal className="w-3.5 h-3.5 text-[#8083ff]" />
+            <span className="font-semibold text-[11px]">Debug</span>
+          </button>
+        )}
 
         <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />

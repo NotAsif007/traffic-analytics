@@ -7,6 +7,7 @@ import { AlertsView } from './components/AlertsView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { WatchlistView } from './components/WatchlistView';
 import { BenchmarkView } from './components/BenchmarkView';
+import { DiagnosticsModal } from './components/DiagnosticsModal';
 import { CityOverviewResponse, LiveMapResponse } from './types/api';
 import { api } from './services/api';
 
@@ -15,6 +16,7 @@ export const App: React.FC = () => {
   const [searchPlate, setSearchPlate] = useState<string>('KA01AB1234');
   const [overviewData, setOverviewData] = useState<CityOverviewResponse | null>(null);
   const [mapData, setMapData] = useState<LiveMapResponse | null>(null);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState<boolean>(false);
 
   // Poll overview and map telemetry
   const refreshData = async () => {
@@ -49,6 +51,7 @@ export const App: React.FC = () => {
         onTabChange={setActiveTab}
         onSearch={handleSearch}
         activeAlertsCount={overviewData?.active_alerts_count || 0}
+        onOpenDiagnostics={() => setDiagnosticsOpen(true)}
       />
 
       {/* Main Active Tab Content View */}
@@ -76,6 +79,12 @@ export const App: React.FC = () => {
         {activeTab === 'watchlist' && <WatchlistView />}
         {activeTab === 'benchmark' && <BenchmarkView />}
       </main>
+
+      {/* Developer Diagnostics & Telemetry Modal */}
+      <DiagnosticsModal
+        isOpen={diagnosticsOpen}
+        onClose={() => setDiagnosticsOpen(false)}
+      />
     </div>
   );
 };
