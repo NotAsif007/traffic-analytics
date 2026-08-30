@@ -51,17 +51,25 @@ This backend platform receives observations from distributed traffic cameras, as
   - `PATCH /api/v1/observations/{id}/status`: Lifecycle transition with validation.
   - `POST /api/v1/observations/bulk`: High-throughput bulk ingestion (up to 500 records) with pre-fetched batch validations and itemized acceptance/rejection reporting.
 
-### Phase 8 — Urban Traffic Analytics [COMPLETE ✅]
-- **Real Stored-Data Driven Intelligence**: Computes traffic metrics strictly from stored observations, tracks, trajectories, and camera connections without mock values.
-- **Traffic Analytics Capabilities**:
-  - **Traffic Volume** (`GET /api/v1/analytics/volume`): Time-bucketed flow rates (`1m`, `5m`, `15m`, `1h`, `1d`) with vehicle-class breakdown.
-  - **Vehicle Class Distribution** (`GET /api/v1/analytics/class-distribution`): Class breakdown and percentage distribution.
-  - **Traffic Density** (`GET /api/v1/analytics/density`): Transparent Greenshields fundamental traffic flow theory ($k = q / v_s$) measuring vehicles/km from space-mean speed and flow rate, including explicit methodology metadata.
-  - **Travel Time & Percentiles** (`GET /api/v1/analytics/travel-times`): Mean, median (p50), p85, p95, min, and max travel times for connected camera pairs.
-  - **Congestion Index** (`GET /api/v1/analytics/congestion`): Real-time comparison of current segment travel times against baseline expected times ($CI = t_{\text{current}} / t_{\text{baseline}}$).
-  - **Origin-Destination (OD) Matrix** (`GET /api/v1/analytics/od-matrix`): Camera/zone $A \to B$ trip volumes, average durations, and distances from completed trajectories.
-  - **Route Frequency** (`GET /api/v1/analytics/routes`): Top recurring camera corridor sequences ranked by trip frequency.
-  - **Camera Health Telemetry** (`GET /api/v1/analytics/camera-health`): Throughput (observations/minute), last sighting timestamp, inactivity tracking, and operational status (`online`, `stale`, `offline`).
+### Phase 9 — Alert and Anomaly Engine [COMPLETE ✅]
+- **Confidence-Aware Alerting System**: Generates explainable, evidence-preserving alerts for threat detection and traffic anomalies without making speculative legal/criminal accusations.
+- **Alert Types**:
+  - `BLACKLIST_MATCH`: Plate observed on a camera matches an active `BlacklistEntry` (exact or fuzzy), preserving OCR confidence, similarity metrics, camera evidence, and timestamp.
+  - `ROUTE_ANOMALY`: Unexpected camera transition, unexpected/opposing direction, or unusual route relative to road network.
+  - `TRAVEL_TIME_ANOMALY`: Speed violation or extreme delay relative to expected transit time.
+  - `CAMERA_OFFLINE`: Inactivity exceeding threshold (> 30 min without observations).
+  - `UNUSUAL_VEHICLE_PATTERN`: Anomalous circulation or repetitive back-and-forth pattern.
+- **Alert & Blacklist Entities**:
+  - `BlacklistEntry` ([`app/models/alert.py`](file:///d:/traffic-analytics/app/models/alert.py)): Target watchlist plate, reason, priority (`low`, `medium`, `high`, `critical`), validity period, and active status.
+  - `Alert` ([`app/models/alert.py`](file:///d:/traffic-analytics/app/models/alert.py)): Alert with `alert_code`, `alert_type`, `severity`, `status` (`NEW`, `ACKNOWLEDGED`, `RESOLVED`, `DISMISSED`), `confidence`, structured `evidence` JSONB, and lifecycle audit fields.
+  - Migration: [`alembic/versions/0007_create_alerts_and_blacklist.py`](file:///d:/traffic-analytics/alembic/versions/0007_create_alerts_and_blacklist.py).
+- **Alert APIs**:
+  - `GET /api/v1/alerts`: List alerts with multi-criteria filtering (type, severity, status, camera, identity, confidence, time range).
+  - `GET /api/v1/alerts/{id}`: Detailed alert with complete explainability evidence.
+  - `POST /api/v1/alerts/{id}/acknowledge`: Mark alert as acknowledged with operator audit note.
+  - `POST /api/v1/alerts/{id}/resolve`: Mark alert as resolved.
+  - `POST /api/v1/alerts/{id}/dismiss`: Dismiss alert with reason.
+  - `POST /api/v1/blacklist`, `GET /api/v1/blacklist`, `GET /api/v1/blacklist/{id}`, `PATCH /api/v1/blacklist/{id}`: Watchlist management.
 
 ---
 
@@ -69,11 +77,12 @@ This backend platform receives observations from distributed traffic cameras, as
 
 | Decision | Reason |
 |---|---|
-| Fundamental Traffic Flow Theory for Density | Density is mathematically grounded ($k = q / v_s$) with explicit methodology definitions rather than arbitrary heuristics |
+| Objective Explainable Alert Wording | System uses telemetry facts ("Route anomaly detected") rather than subjective accusations ("Criminal activity") |
+| Evidence Preservation in JSONB | Every alert stores the raw signal values and match confidences for courtroom auditing |
+| Fundamental Traffic Flow Theory for Density | Density is mathematically grounded ($k = q / v_s$) with explicit methodology definitions |
 | Stored-Data Derived Analytics | All metrics are computed strictly from real DB observations, connections, and trajectories |
-| Deterministic Trajectory Reconstruction | Trajectory generation is purely deterministic given ordered observations, ensuring reproducibility for legal audits |
+| Deterministic Trajectory Reconstruction | Trajectory generation is purely deterministic given ordered observations |
 | Multi-Signal Scoring over Plate Equality | Real-world ANPR suffers from weather, occlusions, and OCR confusion; multi-signal reasoning is resilient |
-| Explainability-by-Design | Every association preserves its signal scores and reasoning text for government/courtroom auditing |
 | Track ID vs Vehicle Identity | A track is local to a single camera stream; a vehicle identity is global across the road network |
 | Spatio-Temporal Candidate Gating | Prevents $O(N^2)$ comparison explosion by gating candidates on connected road graph travel windows |
 | Pluggable Tracker & Detector ABCs | Allows seamless swapping of AI models without touching domain models |
@@ -100,6 +109,7 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/models/vehicle_track.py` | VehicleTrack and TrackPoint models |
 | `app/models/vehicle_identity.py` | VehicleIdentity and VehicleMatch models |
 | `app/models/trajectory.py` | Trajectory and TrajectoryPoint models |
+| `app/models/alert.py` | Alert and BlacklistEntry models |
 | `app/schemas/road.py` | Road schemas & GeoJSON types |
 | `app/schemas/camera.py` | Camera schemas & status validation |
 | `app/schemas/camera_connection.py` | CameraConnection schemas & integrity rules |
@@ -107,18 +117,22 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/schemas/vehicle_track.py` | VehicleTrack & TrackPoint schemas & filters |
 | `app/schemas/vehicle_identity.py` | VehicleIdentity & VehicleMatch schemas & explainability |
 | `app/schemas/trajectory.py` | Trajectory & TrajectoryPoint schemas, filters, and timeline types |
-| `app/schemas/analytics.py` | Urban Traffic Analytics schemas (volume, class, density, travel time, congestion, OD, routes, health) |
+| `app/schemas/analytics.py` | Urban Traffic Analytics schemas |
+| `app/schemas/alert.py` | Alert and BlacklistEntry schemas & action requests |
+| `app/services/alert.py` | Alert and anomaly detection service with lifecycle transitions |
 | `app/services/analytics.py` | Analytics calculation engine |
 | `app/services/vehicle_identity.py` | Cross-camera association service & hypothesis management |
 | `app/services/trajectory.py` | Trajectory lifecycle, transition validation & timeline reconstruction |
-| `app/api/v1/analytics.py` | Analytics endpoints (volume, class-distribution, density, travel-times, congestion, od-matrix, routes, camera-health) |
-| `app/api/v1/trajectories.py` | Trajectory list, detail, and timeline endpoints |
+| `app/api/v1/alerts.py` | Alerts endpoints (list, get, acknowledge, resolve, dismiss) |
+| `app/api/v1/blacklist.py` | Watchlist management endpoints |
+| `app/api/v1/analytics.py` | Analytics endpoints |
+| `app/api/v1/trajectories.py` | Trajectory endpoints |
 | `app/api/v1/vehicles.py` | Vehicle identity trajectory lookup endpoint |
-| `alembic/versions/0006_create_trajectories.py` | DB migration for trajectories & points |
+| `alembic/versions/0007_create_alerts_and_blacklist.py` | DB migration for alerts & blacklist |
 | `tools/seed_city.py` | Synthetic city network seed script |
 
 ---
 
 ## Test Status
-- **Unit Tests:** 98 passing (`pytest tests/unit/ -v`)
-- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`, `analytics`)
+- **Unit Tests:** 102 passing (`pytest tests/unit/ -v`)
+- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`, `analytics`, `alerts`, `blacklist`)

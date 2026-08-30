@@ -12,7 +12,9 @@ Adding a new resource:
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    alerts,
     analytics,
+    blacklist,
     camera_connections,
     cameras,
     health,
@@ -52,6 +54,6 @@ router.include_router(vehicles.router)
 # Phase 8 — Urban traffic analytics
 router.include_router(analytics.router)
 
-# Phase 9+ placeholders:
-# router.include_router(blacklist.router)
-# router.include_router(alerts.router)
+# Phase 9 — Alert and anomaly engine
+router.include_router(blacklist.router)
+router.include_router(alerts.router)

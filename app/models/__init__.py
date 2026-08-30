@@ -5,6 +5,7 @@ Import all models here so Alembic can discover them via
 `from app.models import *` in alembic/env.py.
 """
 
+from app.models.alert import Alert, BlacklistEntry  # noqa: F401
 from app.models.camera import Camera  # noqa: F401
 from app.models.camera_connection import CameraConnection  # noqa: F401
 from app.models.mixins import TimestampMixin, UUIDMixin  # noqa: F401
@@ -27,4 +28,6 @@ __all__ = [
     "VehicleMatch",
     "Trajectory",
     "TrajectoryPoint",
+    "BlacklistEntry",
+    "Alert",
 ]
