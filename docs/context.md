@@ -51,19 +51,17 @@ This backend platform receives observations from distributed traffic cameras, as
   - `PATCH /api/v1/observations/{id}/status`: Lifecycle transition with validation.
   - `POST /api/v1/observations/bulk`: High-throughput bulk ingestion (up to 500 records) with pre-fetched batch validations and itemized acceptance/rejection reporting.
 
-### Phase 7 — City-Wide Vehicle Trajectory Engine [COMPLETE ✅]
-- **Deterministic Trajectory Reconstruction**: Transforms cross-camera associations into ordered, continuous, reproducible vehicle journey trajectories across the camera network.
-- **Trajectory & TrajectoryPoint Entities**:
-  - `Trajectory` ([`app/models/trajectory.py`](file:///d:/traffic-analytics/app/models/trajectory.py)): City-wide vehicle journey with `trajectory_id`, `vehicle_identity_id`, start/end times, lifecycle status (`active`, `completed`, `terminated`), accumulated `total_distance_m`, elapsed `total_travel_time_s`, `average_speed_kmh`, `ordered_camera_ids`, `ordered_camera_names`, and PostGIS `LINESTRING` `route_geometry`.
-  - `TrajectoryPoint` ([`app/models/trajectory.py`](file:///d:/traffic-analytics/app/models/trajectory.py)): 1-based chronological waypoint with camera ID, observation/track reference, plate reading & confidence, segment distance, transit duration, and interpolation flag.
-  - Migration: [`alembic/versions/0006_create_trajectories.py`](file:///d:/traffic-analytics/alembic/versions/0006_create_trajectories.py).
-- **Trajectory Service & Route Engine**:
-  - `TrajectoryService` ([`app/services/trajectory.py`](file:///d:/traffic-analytics/app/services/trajectory.py)): Manages journey creation, sequential observation appending, speed & transition feasibility checks, impossible transition rejection (e.g. negative $\Delta t$ or unrealistic speeds), and dynamic timeline reconstruction.
-- **Trajectory APIs**:
-  - `GET /api/v1/trajectories`: Multi-filter trajectory listing (identity, camera, confidence, status, time range).
-  - `GET /api/v1/trajectories/{id}`: Detailed trajectory with all chronological waypoint nodes.
-  - `GET /api/v1/trajectories/{id}/timeline`: Structured journey timeline with segment-by-segment elapsed time, speeds, and camera breadcrumbs.
-  - `GET /api/v1/vehicles/{identity_id}/trajectories`: Historical trajectories for a specific vehicle identity.
+### Phase 8 — Urban Traffic Analytics [COMPLETE ✅]
+- **Real Stored-Data Driven Intelligence**: Computes traffic metrics strictly from stored observations, tracks, trajectories, and camera connections without mock values.
+- **Traffic Analytics Capabilities**:
+  - **Traffic Volume** (`GET /api/v1/analytics/volume`): Time-bucketed flow rates (`1m`, `5m`, `15m`, `1h`, `1d`) with vehicle-class breakdown.
+  - **Vehicle Class Distribution** (`GET /api/v1/analytics/class-distribution`): Class breakdown and percentage distribution.
+  - **Traffic Density** (`GET /api/v1/analytics/density`): Transparent Greenshields fundamental traffic flow theory ($k = q / v_s$) measuring vehicles/km from space-mean speed and flow rate, including explicit methodology metadata.
+  - **Travel Time & Percentiles** (`GET /api/v1/analytics/travel-times`): Mean, median (p50), p85, p95, min, and max travel times for connected camera pairs.
+  - **Congestion Index** (`GET /api/v1/analytics/congestion`): Real-time comparison of current segment travel times against baseline expected times ($CI = t_{\text{current}} / t_{\text{baseline}}$).
+  - **Origin-Destination (OD) Matrix** (`GET /api/v1/analytics/od-matrix`): Camera/zone $A \to B$ trip volumes, average durations, and distances from completed trajectories.
+  - **Route Frequency** (`GET /api/v1/analytics/routes`): Top recurring camera corridor sequences ranked by trip frequency.
+  - **Camera Health Telemetry** (`GET /api/v1/analytics/camera-health`): Throughput (observations/minute), last sighting timestamp, inactivity tracking, and operational status (`online`, `stale`, `offline`).
 
 ---
 
@@ -71,6 +69,8 @@ This backend platform receives observations from distributed traffic cameras, as
 
 | Decision | Reason |
 |---|---|
+| Fundamental Traffic Flow Theory for Density | Density is mathematically grounded ($k = q / v_s$) with explicit methodology definitions rather than arbitrary heuristics |
+| Stored-Data Derived Analytics | All metrics are computed strictly from real DB observations, connections, and trajectories |
 | Deterministic Trajectory Reconstruction | Trajectory generation is purely deterministic given ordered observations, ensuring reproducibility for legal audits |
 | Multi-Signal Scoring over Plate Equality | Real-world ANPR suffers from weather, occlusions, and OCR confusion; multi-signal reasoning is resilient |
 | Explainability-by-Design | Every association preserves its signal scores and reasoning text for government/courtroom auditing |
@@ -107,12 +107,11 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/schemas/vehicle_track.py` | VehicleTrack & TrackPoint schemas & filters |
 | `app/schemas/vehicle_identity.py` | VehicleIdentity & VehicleMatch schemas & explainability |
 | `app/schemas/trajectory.py` | Trajectory & TrajectoryPoint schemas, filters, and timeline types |
-| `app/association/contracts.py` | Association contracts, scoring weights, and decision schemas |
-| `app/association/scorer.py` | Multi-signal association scorer |
-| `app/association/gating.py` | Spatio-temporal candidate generation gating |
-| `app/association/engine.py` | AssociationEngine with explainability generation |
+| `app/schemas/analytics.py` | Urban Traffic Analytics schemas (volume, class, density, travel time, congestion, OD, routes, health) |
+| `app/services/analytics.py` | Analytics calculation engine |
 | `app/services/vehicle_identity.py` | Cross-camera association service & hypothesis management |
 | `app/services/trajectory.py` | Trajectory lifecycle, transition validation & timeline reconstruction |
+| `app/api/v1/analytics.py` | Analytics endpoints (volume, class-distribution, density, travel-times, congestion, od-matrix, routes, camera-health) |
 | `app/api/v1/trajectories.py` | Trajectory list, detail, and timeline endpoints |
 | `app/api/v1/vehicles.py` | Vehicle identity trajectory lookup endpoint |
 | `alembic/versions/0006_create_trajectories.py` | DB migration for trajectories & points |
@@ -121,5 +120,5 @@ This backend platform receives observations from distributed traffic cameras, as
 ---
 
 ## Test Status
-- **Unit Tests:** 93 passing (`pytest tests/unit/ -v`)
-- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`)
+- **Unit Tests:** 98 passing (`pytest tests/unit/ -v`)
+- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`, `analytics`)
