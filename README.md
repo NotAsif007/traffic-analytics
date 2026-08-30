@@ -16,7 +16,7 @@
 
 ## 📖 Overview
 
-This platform is an enterprise-grade, real-time backend and intelligence engine designed for city-scale multi-camera Automatic Number Plate Recognition (ANPR), single-camera multi-object tracking (MOT), cross-camera vehicle association, trajectory reconstruction, urban traffic analytics, and confidence-aware anomaly detection.
+This platform is an enterprise-grade, real-time backend and intelligence engine designed for city-scale multi-camera Automatic Number Plate Recognition (ANPR), single-camera multi-object tracking (MOT), cross-camera vehicle association, trajectory reconstruction, urban traffic analytics, and confidence-aware anomaly detection across **6 Major Indian Metropolitan Networks**.
 
 ### Core Architectural Principles
 
@@ -25,7 +25,28 @@ This platform is an enterprise-grade, real-time backend and intelligence engine 
 3. **Multi-Signal Association**: Cross-camera vehicle re-identification evaluates exact/fuzzy plate similarity, temporal consistency, road connectivity, physical speed feasibility, and vehicle appearance (class/color).
 4. **Explainable AI**: Every alert and cross-camera match includes an immutable JSONB evidence trail preserving raw feature values and matching heuristics.
 5. **High-Throughput Resilience**: Features asynchronous batch ingestion, Redis event pub/sub with transparent in-memory fallback, LRU idempotency deduplication, and dead-letter queue isolation.
-6. **Real-World Indian Traffic Readiness**: Native parser adapters for standard Indian CCTV datasets (**UVH-26**, **ITD**, **Indian LP**, **RoundaboutHD**, **IRDD**) accommodating auto-rickshaws, two-wheelers, monsoons, and non-standard plates.
+6. **Pan-India Real Traffic Readiness**: Native parser adapters for standard Indian CCTV datasets (**UVH-26**, **ITD**, **Indian LP**, **RoundaboutHD**, **IRDD**) accommodating auto-rickshaws, two-wheelers, monsoons, and non-standard plates.
+
+---
+
+## 🇮🇳 Pan-India Multi-City Network Support
+
+The platform models and visualizes live traffic surveillance across 6 major Indian metropolitan hubs:
+
+| Metro Region | State Code | Key Corridors & Surveillance Nodes | Key Vehicle Mix |
+|---|---|---|---|
+| **Bengaluru** | `KA` | MG Road Trinity, Silk Board Choke Point, Hebbal Flyover, Electronic City Expressway | Auto-Rickshaws, BMTC Buses, Tech Cabs, Bikes |
+| **Delhi NCR** | `DL / HR / UP` | AIIMS Ring Road Flyover, DND Flyway Toll Plaza, Gurgaon Cyber City NH48 | DTC Buses, Sedans, Commercial Taxis, Fastag Cabs |
+| **Mumbai** | `MH` | Western Express Highway (Bandra), Bandra-Worli Sea Link, Marine Drive | Kali-Peeli Taxis, Multi-Axle Trucks, Sea Link Traffic |
+| **Hyderabad** | `TS` | HITEC City Cyber Towers, Gachibowli Outer Ring Road (ORR) | TSRTC Buses, Shared Autos, IT Expressways |
+| **Chennai** | `TN` | Anna Salai (Mount Road), Old Mahabalipuram Road (OMR Tidel Park) | MTC Buses, Two-Wheelers, Suburban Arterials |
+| **Kolkata** | `WB` | Eastern Metropolitan (EM) Bypass Science City, Howrah Bridge Approach | Yellow Ambassador Taxis, WBSTC Buses, Minivans |
+
+### Seeding Pan-India Network into Database
+```bash
+# Seed 20 major road corridors, 24 PostGIS CCTV nodes, observations, and alerts across 6 metros
+python tools/seed_pan_india.py
+```
 
 ---
 
@@ -77,7 +98,7 @@ flowchart TD
     end
 
     subgraph DASHBOARD["5. Command Center APIs & Web UI"]
-        G & F & H -->|"Read-Optimized Views"| J["Phase 12: Dashboard API & React 19 Frontend"]
+        G & F & H -->|"Read-Optimized Views"| J["Phase 12 & 14: Pan-India Dashboard API & React 19 Frontend"]
     end
 
     subgraph BENCHMARK["6. Validation & Science"]
@@ -89,27 +110,33 @@ flowchart TD
 
 ## ⚡ Quick Start & Development Setup
 
-### Option 1: Native Local Development (Zero Docker Required)
+### 1. Database & Event Bus Setup (Docker)
 ```bash
-# 1. Clone the repository
-git clone https://github.com/NotAsif007/traffic-analytics.git
-cd traffic-analytics
+# Start PostgreSQL PostGIS (port 5432) and Redis (port 6379)
+docker compose up db redis -d
+```
 
-# 2. Activate virtual environment & install dependencies
-python -m venv .venv
+### 2. Backend Setup
+```bash
+# Activate virtual environment
 .venv\Scripts\activate  # Windows (or: source .venv/bin/activate on Linux/macOS)
+
+# Install dependencies
 pip install -r requirements.txt
 
-# 3. Use local environment preset
-copy .env.local .env
+# Run migrations & seed Pan-India multi-city network
+alembic upgrade head
+python tools/seed_pan_india.py
 
-# 4. Verify system health with Doctor CLI
+# Verify system health with Doctor CLI
 python tools/doctor.py
 
-# 5. Launch backend server
+# Launch backend API
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-# 6. Launch frontend Command Center
+### 3. Frontend Command Center Setup
+```bash
 cd frontend
 npm install
 npm run dev

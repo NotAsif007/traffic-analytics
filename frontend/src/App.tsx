@@ -13,6 +13,7 @@ import { api } from './services/api';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [selectedCity, setSelectedCity] = useState<string>('All');
   const [searchPlate, setSearchPlate] = useState<string>('KA01AB1234');
   const [overviewData, setOverviewData] = useState<CityOverviewResponse | null>(null);
   const [mapData, setMapData] = useState<LiveMapResponse | null>(null);
@@ -52,6 +53,8 @@ export const App: React.FC = () => {
         onSearch={handleSearch}
         activeAlertsCount={overviewData?.active_alerts_count || 0}
         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+        selectedCity={selectedCity}
+        onCityChange={setSelectedCity}
       />
 
       {/* Main Active Tab Content View */}
@@ -67,6 +70,8 @@ export const App: React.FC = () => {
           <MapView
             data={mapData}
             onSelectVehicle={handleSearch}
+            selectedCity={selectedCity}
+            onCityChange={setSelectedCity}
           />
         )}
         {activeTab === 'investigate' && (

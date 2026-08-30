@@ -9,10 +9,21 @@ import {
   Cpu,
   Radio,
   Clock,
-  Terminal
+  Terminal,
+  Globe2
 } from 'lucide-react';
 
 export type TabType = 'overview' | 'map' | 'investigate' | 'alerts' | 'analytics' | 'watchlist' | 'benchmark';
+
+export const CITIES_LIST = [
+  { id: 'All', label: '🇮🇳 Pan-India', fullName: 'National Multi-City Network' },
+  { id: 'Bengaluru', label: '🏙️ Bengaluru (KA)', fullName: 'Bengaluru Smart Traffic' },
+  { id: 'Delhi NCR', label: '🏛️ Delhi NCR (DL)', fullName: 'Delhi NCR Expressway Network' },
+  { id: 'Mumbai', label: '🌊 Mumbai (MH)', fullName: 'Mumbai Coastal & Freeway' },
+  { id: 'Hyderabad', label: '💎 Hyderabad (TS)', fullName: 'Hyderabad IT & ORR Corridor' },
+  { id: 'Chennai', label: '🏖️ Chennai (TN)', fullName: 'Chennai Arterial & OMR' },
+  { id: 'Kolkata', label: '🌉 Kolkata (WB)', fullName: 'Kolkata Bypass & Heritage' },
+];
 
 interface NavbarProps {
   activeTab: TabType;
@@ -20,6 +31,8 @@ interface NavbarProps {
   onSearch: (query: string) => void;
   activeAlertsCount: number;
   onOpenDiagnostics?: () => void;
+  selectedCity?: string;
+  onCityChange?: (city: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,6 +41,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearch,
   activeAlertsCount,
   onOpenDiagnostics,
+  selectedCity = 'All',
+  onCityChange,
 }) => {
   const [searchInput, setSearchInput] = useState('');
   const [timeStr, setTimeStr] = useState('');
@@ -82,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </div>
           <p className="text-[10px] text-[#908fa0] font-mono tracking-tight">
-            City-Wide Multi-Camera ANPR Intelligence
+            Pan-India Multi-Camera ANPR Intelligence
           </p>
         </div>
       </div>
@@ -113,29 +128,47 @@ export const Navbar: React.FC<NavbarProps> = ({
         })}
       </nav>
 
-      {/* Right Controls: Search & Clock */}
-      <div className="flex items-center gap-3">
+      {/* Right Controls: City Selector, Search, Diagnostics, Clock */}
+      <div className="flex items-center gap-2.5">
+        {/* City Selector Dropdown */}
+        {onCityChange && (
+          <div className="flex items-center gap-1.5 bg-[#0d0d15] px-2 py-1 rounded border border-[#292932] text-xs font-mono">
+            <Globe2 className="w-3.5 h-3.5 text-[#8083ff]" />
+            <select
+              value={selectedCity}
+              onChange={(e) => onCityChange(e.target.value)}
+              className="bg-transparent text-[#e4e1ed] font-semibold text-xs focus:outline-none cursor-pointer"
+            >
+              {CITIES_LIST.map((c) => (
+                <option key={c.id} value={c.id} className="bg-[#13131b] text-[#e4e1ed]">
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <form onSubmit={handleSearchSubmit} className="relative">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#908fa0]" />
           <input
             type="text"
-            placeholder="Search Plate (e.g. KA01AB1234)..."
+            placeholder="Search (e.g. DL03TH1234)..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-56 bg-[#0d0d15] border border-[#292932] rounded pl-8 pr-2.5 py-1 text-xs text-[#e4e1ed] placeholder-[#908fa0] focus:outline-none focus:border-[#8083ff] font-mono transition-colors"
+            className="w-48 bg-[#0d0d15] border border-[#292932] rounded pl-8 pr-2 py-1 text-xs text-[#e4e1ed] placeholder-[#908fa0] focus:outline-none focus:border-[#8083ff] font-mono transition-colors"
           />
         </form>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#0d0d15] border border-[#292932] text-xs font-mono text-[#c7c4d7]">
+        <div className="flex items-center gap-1 px-2 py-1 rounded bg-[#0d0d15] border border-[#292932] text-xs font-mono text-[#c7c4d7]">
           <Clock className="w-3.5 h-3.5 text-[#38bdf8]" />
           <span>{timeStr || '00:00:00'}</span>
-          <span className="text-[10px] text-[#908fa0]">UTC</span>
+          <span className="text-[9px] text-[#908fa0]">IST</span>
         </div>
 
         {onOpenDiagnostics && (
           <button
             onClick={onOpenDiagnostics}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#1f1f27] hover:bg-[#292932] border border-[#34343d] text-[#c0c1ff] text-xs font-mono transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#1f1f27] hover:bg-[#292932] border border-[#34343d] text-[#c0c1ff] text-xs font-mono transition-colors cursor-pointer"
             title="Open System Diagnostics & Debug Console"
           >
             <Terminal className="w-3.5 h-3.5 text-[#8083ff]" />
@@ -143,8 +176,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        <div className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
           <span className="text-[10px] font-semibold tracking-wider">LIVE</span>
         </div>
       </div>

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import {
   Camera,
   Activity,
   Car,
   AlertTriangle,
-  Info,
   Radio,
   Eye,
-  Sliders
+  Sliders,
+  Globe2
 } from 'lucide-react';
 import { LiveMapResponse, MapCameraNode } from '../types/api';
 import { CCTVStreamPlayer } from './CCTVStreamPlayer';
@@ -21,6 +21,26 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
+
+const CITY_COORDINATES: Record<string, { center: [number, number]; zoom: number }> = {
+  All: { center: [21.5, 78.9629], zoom: 5 },
+  Bengaluru: { center: [12.9716, 77.5946], zoom: 12 },
+  'Delhi NCR': { center: [28.5700, 77.2200], zoom: 12 },
+  Mumbai: { center: [19.0400, 72.8400], zoom: 12 },
+  Hyderabad: { center: [17.4400, 78.3700], zoom: 12 },
+  Chennai: { center: [13.0200, 80.2400], zoom: 12 },
+  Kolkata: { center: [22.5600, 88.3700], zoom: 12 },
+};
+
+// Map Viewport Controller for Smooth FlyTo Transitions
+const MapPanController: React.FC<{ selectedCity: string }> = ({ selectedCity }) => {
+  const map = useMap();
+  useEffect(() => {
+    const target = CITY_COORDINATES[selectedCity] || CITY_COORDINATES.All;
+    map.flyTo(target.center, target.zoom, { duration: 1.2 });
+  }, [selectedCity, map]);
+  return null;
+};
 
 // Custom camera marker icons
 const createCameraIcon = (intensity: string, hasAlert: boolean) => {
@@ -41,9 +61,16 @@ const createCameraIcon = (intensity: string, hasAlert: boolean) => {
 interface MapViewProps {
   data: LiveMapResponse | null;
   onSelectVehicle: (plate: string) => void;
+  selectedCity?: string;
+  onCityChange?: (city: string) => void;
 }
 
-export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
+export const MapView: React.FC<MapViewProps> = ({
+  data,
+  onSelectVehicle,
+  selectedCity = 'All',
+  onCityChange,
+}) => {
   const [selectedCamera, setSelectedCamera] = useState<MapCameraNode | null>(null);
   const [showTrajectories, setShowTrajectories] = useState(true);
   const [showAlerts, setShowAlerts] = useState(true);
@@ -53,22 +80,21 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
       <div className="flex items-center justify-center h-full text-[#908fa0]">
         <div className="flex items-center gap-2 font-mono text-sm">
           <Radio className="w-4 h-4 animate-spin text-[#c0c1ff]" />
-          <span>Rendering Geospatial Map Layers...</span>
+          <span>Rendering Pan-India Geospatial Map Layers...</span>
         </div>
       </div>
     );
   }
 
-  // Bangalore center default
-  const defaultCenter: [number, number] = [12.9716, 77.5946];
+  const initialView = CITY_COORDINATES[selectedCity] || CITY_COORDINATES.All;
 
   return (
     <div className="relative w-full h-full flex overflow-hidden">
       {/* Map Control Bar Overlay */}
-      <div className="absolute top-3 left-3 z-[1000] bg-[#13131b]/90 backdrop-blur-md border border-[#292932] rounded p-2.5 flex items-center gap-3 text-xs shadow-2xl">
+      <div className="absolute top-3 left-3 z-[1000] bg-[#13131b]/90 backdrop-blur-md border border-[#292932] rounded p-2.5 flex flex-wrap items-center gap-3 text-xs shadow-2xl">
         <div className="flex items-center gap-1.5 font-mono text-[#c0c1ff] font-semibold border-r border-[#292932] pr-3">
-          <Activity className="w-4 h-4 text-[#38bdf8]" />
-          <span>GIS LAYERS</span>
+          <Globe2 className="w-4 h-4 text-[#8083ff]" />
+          <span>{selectedCity === 'All' ? 'Pan-India Network' : selectedCity}</span>
         </div>
 
         <label className="flex items-center gap-1.5 cursor-pointer text-[#e4e1ed] font-medium">
@@ -110,12 +136,14 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
       {/* Main Map Container */}
       <div className="flex-1 h-full w-full">
         <MapContainer
-          center={defaultCenter}
-          zoom={13}
+          center={initialView.center}
+          zoom={initialView.zoom}
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}
         >
-          {/* Esri World Dark Gray Base Tile Layer (No watermark, dark command-center theme) */}
+          <MapPanController selectedCity={selectedCity} />
+
+          {/* Esri World Dark Gray Base Tile Layer */}
           <TileLayer
             attribution='&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; OpenStreetMap'
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
@@ -142,41 +170,100 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
               <Polyline
                 key={road.id}
                 positions={coords}
-                pathOptions={{ color, weight: 4, opacity: 0.7, dashArray: '4, 4' }}
-              />
+                pathOptions={{
+                  color,
+                  weight: 4,
+                  opacity: 0.8,
+                  lineCap: 'round',
+                }}
+              >
+                <Popup className="custom-popup">
+                  <div className="p-2 space-y-1 bg-[#13131b] text-[#e4e1ed] font-sans">
+                    <div className="font-bold text-xs text-[#c0c1ff]">{road.name}</div>
+                    <div className="text-[11px] font-mono text-[#908fa0]">
+                      Congestion Index: <strong className="text-amber-400">{road.current_congestion_index.toFixed(2)}x</strong>
+                    </div>
+                  </div>
+                </Popup>
+              </Polyline>
             );
           })}
 
-          {/* Active Vehicle Trajectories */}
+          {/* Active Trajectories Polylines */}
           {showTrajectories &&
-            data.active_trajectories.map((traj) => {
-              const positions = traj.coordinates.map((c) => [c[1], c[0]] as [number, number]);
-              return (
-                <React.Fragment key={traj.trajectory_id}>
-                  <Polyline
-                    positions={positions}
-                    pathOptions={{ color: '#c0c1ff', weight: 4, opacity: 0.9 }}
-                  />
-                  {positions.length > 0 && (
-                    <Marker
-                      position={positions[positions.length - 1]}
-                      icon={L.divIcon({
-                        className: 'vehicle-plate-pill',
-                        html: `<div style="background: #13131b; color: #c0c1ff; border: 1px solid #8083ff; font-family: monospace; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.8); white-space: nowrap; transform: translate(-50%, -100%); cursor: pointer;">🚗 ${traj.canonical_plate || 'KA01AB1234'}</div>`,
-                        iconSize: [80, 20],
-                      })}
-                      eventHandlers={{
-                        click: () => traj.canonical_plate && onSelectVehicle(traj.canonical_plate),
-                      }}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
+            data.active_trajectories.map((traj) => (
+              <Polyline
+                key={traj.trajectory_id}
+                positions={traj.coordinates}
+                pathOptions={{
+                  color: '#8083ff',
+                  weight: 3,
+                  dashArray: '6, 8',
+                  opacity: 0.9,
+                }}
+              >
+                <Popup className="custom-popup">
+                  <div className="p-2 space-y-1.5 bg-[#13131b] text-[#e4e1ed] font-sans">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#c0c1ff]">
+                      <Car className="w-3.5 h-3.5" />
+                      <span>{traj.canonical_plate || 'Unidentified Vehicle'}</span>
+                    </div>
+                    <div className="text-[11px] font-mono text-[#908fa0]">
+                      Class: <strong className="text-[#e4e1ed]">{traj.vehicle_class || 'car'}</strong>
+                    </div>
+                    {traj.current_speed_kmh && (
+                      <div className="text-[11px] font-mono text-[#908fa0]">
+                        Est. Speed: <strong className="text-emerald-400">{traj.current_speed_kmh.toFixed(1)} km/h</strong>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => onSelectVehicle(traj.canonical_plate || '')}
+                      className="mt-1 w-full py-1 px-2 rounded bg-[#8083ff] hover:bg-[#8083ff]/90 text-[#0d0096] text-[10px] font-mono font-bold transition-colors cursor-pointer"
+                    >
+                      Investigate Dossier
+                    </button>
+                  </div>
+                </Popup>
+              </Polyline>
+            ))}
 
-          {/* Camera Node Markers */}
+          {/* Security Alert Pins */}
+          {showAlerts &&
+            data.active_alerts.map((alert) => (
+              <Marker
+                key={alert.alert_id || alert.id}
+                position={[alert.latitude, alert.longitude]}
+                icon={L.divIcon({
+                  className: 'custom-alert-marker',
+                  html: `
+                    <div style="width: 24px; height: 24px; background: #ef4444; border: 2px solid #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px #ef4444; animation: bounce 1s infinite;">
+                      <span style="color: white; font-size: 11px; font-weight: bold;">!</span>
+                    </div>
+                  `,
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12],
+                })}
+              >
+                <Popup className="custom-popup">
+                  <div className="p-2 space-y-1 bg-[#13131b] text-[#e4e1ed] font-sans">
+                    <div className="flex items-center gap-1 text-xs font-bold text-rose-400">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>{alert.alert_code}: {alert.alert_type}</span>
+                    </div>
+                    <p className="text-[11px] text-[#908fa0] leading-tight">{alert.description || alert.title}</p>
+                    <div className="text-[10px] font-mono text-rose-300">
+                      Severity: <strong className="uppercase">{alert.severity}</strong>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+          {/* Camera Nodes */}
           {data.cameras.map((cam) => {
-            const hasAlert = data.active_alerts.some((a) => a.camera_name === cam.name);
+            const hasAlert = data.active_alerts.some(
+              (a) => a.camera_name === cam.name
+            );
             return (
               <Marker
                 key={cam.id}
@@ -186,17 +273,11 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
                   click: () => setSelectedCamera(cam),
                 }}
               >
-                <Popup>
-                  <div className="p-2 space-y-1 text-xs">
-                    <div className="flex items-center justify-between font-bold text-sm text-[#c0c1ff]">
+                <Popup className="custom-popup">
+                  <div className="p-2 space-y-1 bg-[#13131b] text-[#e4e1ed] font-sans">
+                    <div className="flex items-center gap-1 font-bold text-xs text-[#c0c1ff]">
+                      <Camera className="w-3.5 h-3.5" />
                       <span>{cam.name}</span>
-                      <span
-                        className={`text-[10px] font-mono px-1 py-0.5 rounded uppercase ${
-                          cam.status === 'online' ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'
-                        }`}
-                      >
-                        {cam.status}
-                      </span>
                     </div>
                     <div className="text-[11px] text-[#908fa0] font-mono">
                       Hourly Sightings: <strong className="text-[#e4e1ed]">{cam.observations_last_hour}</strong>
@@ -206,7 +287,7 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
                     </div>
                     {hasAlert && (
                       <div className="p-1 rounded bg-rose-950/80 border border-rose-500/50 text-rose-400 font-bold text-[10px] flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Security Alert Active
+                        <AlertTriangle className="w-3.5 h-3.5" /> Security Alert Active
                       </div>
                     )}
                   </div>
@@ -281,10 +362,10 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
 
           <div className="pt-3 border-t border-[#292932] space-y-2">
             <button
-              onClick={() => onSelectVehicle('KA01AB1234')}
-              className="w-full py-2 rounded bg-[#8083ff] hover:bg-[#8083ff]/90 text-[#0d0096] font-bold text-xs font-mono transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              onClick={() => setSelectedCamera(null)}
+              className="w-full py-1.5 rounded bg-[#1f1f27] hover:bg-[#292932] text-xs font-mono text-[#c7c4d7] transition-colors cursor-pointer"
             >
-              <Eye className="w-3.5 h-3.5" /> Inspect Camera Sightings
+              Close Stream
             </button>
           </div>
         </div>

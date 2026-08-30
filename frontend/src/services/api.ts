@@ -245,8 +245,9 @@ export const api = {
   // Alert Management
   async listAlerts(): Promise<AlertItem[]> {
     try {
-      const res = await client.get<AlertItem[]>('/alerts/');
-      return res.data;
+      const res = await client.get<any>('/alerts/');
+      const items = res.data?.items || (Array.isArray(res.data) ? res.data : []);
+      return items;
     } catch {
       return [
         {
@@ -322,8 +323,9 @@ export const api = {
   // Watchlist
   async listWatchlist(): Promise<BlacklistEntry[]> {
     try {
-      const res = await client.get<BlacklistEntry[]>('/blacklist/');
-      return res.data;
+      const res = await client.get<any>('/blacklist/');
+      const items = res.data?.items || (Array.isArray(res.data) ? res.data : []);
+      return items;
     } catch {
       return [
         { id: 'w1', plate_number: 'KA01MJ4040', reason: 'Stolen Vehicle (FIR #2026/842)', priority: 'critical', is_active: true, created_at: '2026-08-15T10:00:00Z', notes: 'White Toyota Fortuner' },
