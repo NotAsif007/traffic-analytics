@@ -51,21 +51,19 @@ This backend platform receives observations from distributed traffic cameras, as
   - `PATCH /api/v1/observations/{id}/status`: Lifecycle transition with validation.
   - `POST /api/v1/observations/bulk`: High-throughput bulk ingestion (up to 500 records) with pre-fetched batch validations and itemized acceptance/rejection reporting.
 
-### Phase 6 — Cross-Camera Vehicle Association Engine [COMPLETE ✅]
-- **Core Intelligence Engine**: Multi-signal cross-camera association determining whether sightings across disparate cameras represent the same physical vehicle without relying purely on plate string equality.
-- **VehicleIdentity & VehicleMatch Entities**:
-  - `VehicleIdentity` ([`app/models/vehicle_identity.py`](file:///d:/traffic-analytics/app/models/vehicle_identity.py)): City-wide vehicle hypothesis tracking consensus plate, class, color, confidence, total sightings, and lifecycle status (`candidate`, `accepted`, `rejected`, `needs_review`).
-  - `VehicleMatch` ([`app/models/vehicle_match.py`](file:///d:/traffic-analytics/app/models/vehicle_identity.py)): Association link with `match_score`, `signals` breakdown JSONB, and human-auditable `reasoning` text.
-  - Migration: [`alembic/versions/0005_create_vehicle_identities.py`](file:///d:/traffic-analytics/alembic/versions/0005_create_vehicle_identities.py).
-- **Candidate Gating & Multi-Signal Scoring**:
-  - `CandidateGating` ([`app/association/gating.py`](file:///d:/traffic-analytics/app/association/gating.py)): Spatio-temporal time window and topology filtering to eliminate $O(N^2)$ pairwise comparisons.
-  - `AssociationScorer` ([`app/association/scorer.py`](file:///d:/traffic-analytics/app/association/scorer.py)): Computes plate similarity, appearance similarity, temporal travel feasibility with speed violation penalties, route connectivity, direction heading compatibility, and vehicle class/color alignment.
-  - `AssociationEngine` ([`app/association/engine.py`](file:///d:/traffic-analytics/app/association/engine.py)): Evaluates candidate pairs, applies configurable weights & thresholds, and builds structured explainability narratives.
-- **Association APIs**:
-  - `GET /api/v1/identities`: List vehicle identities with filters.
-  - `GET /api/v1/identities/{id}`: Detailed identity with all cross-camera match events.
-  - `POST /api/v1/identities/associate`: On-demand or automated association engine trigger.
-  - `GET /api/v1/matches`: List association match events with explainability metrics.
+### Phase 7 — City-Wide Vehicle Trajectory Engine [COMPLETE ✅]
+- **Deterministic Trajectory Reconstruction**: Transforms cross-camera associations into ordered, continuous, reproducible vehicle journey trajectories across the camera network.
+- **Trajectory & TrajectoryPoint Entities**:
+  - `Trajectory` ([`app/models/trajectory.py`](file:///d:/traffic-analytics/app/models/trajectory.py)): City-wide vehicle journey with `trajectory_id`, `vehicle_identity_id`, start/end times, lifecycle status (`active`, `completed`, `terminated`), accumulated `total_distance_m`, elapsed `total_travel_time_s`, `average_speed_kmh`, `ordered_camera_ids`, `ordered_camera_names`, and PostGIS `LINESTRING` `route_geometry`.
+  - `TrajectoryPoint` ([`app/models/trajectory.py`](file:///d:/traffic-analytics/app/models/trajectory.py)): 1-based chronological waypoint with camera ID, observation/track reference, plate reading & confidence, segment distance, transit duration, and interpolation flag.
+  - Migration: [`alembic/versions/0006_create_trajectories.py`](file:///d:/traffic-analytics/alembic/versions/0006_create_trajectories.py).
+- **Trajectory Service & Route Engine**:
+  - `TrajectoryService` ([`app/services/trajectory.py`](file:///d:/traffic-analytics/app/services/trajectory.py)): Manages journey creation, sequential observation appending, speed & transition feasibility checks, impossible transition rejection (e.g. negative $\Delta t$ or unrealistic speeds), and dynamic timeline reconstruction.
+- **Trajectory APIs**:
+  - `GET /api/v1/trajectories`: Multi-filter trajectory listing (identity, camera, confidence, status, time range).
+  - `GET /api/v1/trajectories/{id}`: Detailed trajectory with all chronological waypoint nodes.
+  - `GET /api/v1/trajectories/{id}/timeline`: Structured journey timeline with segment-by-segment elapsed time, speeds, and camera breadcrumbs.
+  - `GET /api/v1/vehicles/{identity_id}/trajectories`: Historical trajectories for a specific vehicle identity.
 
 ---
 
@@ -73,6 +71,7 @@ This backend platform receives observations from distributed traffic cameras, as
 
 | Decision | Reason |
 |---|---|
+| Deterministic Trajectory Reconstruction | Trajectory generation is purely deterministic given ordered observations, ensuring reproducibility for legal audits |
 | Multi-Signal Scoring over Plate Equality | Real-world ANPR suffers from weather, occlusions, and OCR confusion; multi-signal reasoning is resilient |
 | Explainability-by-Design | Every association preserves its signal scores and reasoning text for government/courtroom auditing |
 | Track ID vs Vehicle Identity | A track is local to a single camera stream; a vehicle identity is global across the road network |
@@ -100,24 +99,27 @@ This backend platform receives observations from distributed traffic cameras, as
 | `app/models/vehicle_observation.py` | VehicleObservation event model |
 | `app/models/vehicle_track.py` | VehicleTrack and TrackPoint models |
 | `app/models/vehicle_identity.py` | VehicleIdentity and VehicleMatch models |
+| `app/models/trajectory.py` | Trajectory and TrajectoryPoint models |
 | `app/schemas/road.py` | Road schemas & GeoJSON types |
 | `app/schemas/camera.py` | Camera schemas & status validation |
 | `app/schemas/camera_connection.py` | CameraConnection schemas & integrity rules |
 | `app/schemas/vehicle_observation.py` | VehicleObservation schemas & bulk types |
 | `app/schemas/vehicle_track.py` | VehicleTrack & TrackPoint schemas & filters |
 | `app/schemas/vehicle_identity.py` | VehicleIdentity & VehicleMatch schemas & explainability |
+| `app/schemas/trajectory.py` | Trajectory & TrajectoryPoint schemas, filters, and timeline types |
 | `app/association/contracts.py` | Association contracts, scoring weights, and decision schemas |
 | `app/association/scorer.py` | Multi-signal association scorer |
 | `app/association/gating.py` | Spatio-temporal candidate generation gating |
 | `app/association/engine.py` | AssociationEngine with explainability generation |
 | `app/services/vehicle_identity.py` | Cross-camera association service & hypothesis management |
-| `app/api/v1/identities.py` | VehicleIdentity API endpoints |
-| `app/api/v1/matches.py` | VehicleMatch explainability query endpoints |
-| `alembic/versions/0005_create_vehicle_identities.py` | DB migration for identities & matches |
+| `app/services/trajectory.py` | Trajectory lifecycle, transition validation & timeline reconstruction |
+| `app/api/v1/trajectories.py` | Trajectory list, detail, and timeline endpoints |
+| `app/api/v1/vehicles.py` | Vehicle identity trajectory lookup endpoint |
+| `alembic/versions/0006_create_trajectories.py` | DB migration for trajectories & points |
 | `tools/seed_city.py` | Synthetic city network seed script |
 
 ---
 
 ## Test Status
-- **Unit Tests:** 89 passing (`pytest tests/unit/ -v`)
-- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`)
+- **Unit Tests:** 93 passing (`pytest tests/unit/ -v`)
+- **Integration Tests:** Ready for Docker environment testing (`roads`, `cameras`, `connections`, `observations`, `tracks`, `identities`, `trajectories`)

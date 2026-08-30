@@ -18,7 +18,9 @@ T0 = datetime(2026, 8, 30, 10, 0, 0, tzinfo=timezone.utc)
 
 @pytest.fixture
 def mock_session() -> AsyncMock:
-    return AsyncMock()
+    session = AsyncMock()
+    session.add = MagicMock()
+    return session
 
 
 @pytest.fixture

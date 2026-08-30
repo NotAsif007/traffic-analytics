@@ -20,6 +20,8 @@ from app.api.v1 import (
     observations,
     roads,
     tracks,
+    trajectories,
+    vehicles,
 )
 
 router = APIRouter()
@@ -42,6 +44,10 @@ router.include_router(tracks.router)
 router.include_router(identities.router)
 router.include_router(matches.router)
 
-# Phase 7+ placeholders:
+# Phase 7 — City-wide vehicle trajectories
+router.include_router(trajectories.router)
+router.include_router(vehicles.router)
+
+# Phase 8+ placeholders:
 # router.include_router(blacklist.router)
 # router.include_router(alerts.router)

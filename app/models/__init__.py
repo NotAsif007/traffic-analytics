@@ -9,6 +9,7 @@ from app.models.camera import Camera  # noqa: F401
 from app.models.camera_connection import CameraConnection  # noqa: F401
 from app.models.mixins import TimestampMixin, UUIDMixin  # noqa: F401
 from app.models.road import Road  # noqa: F401
+from app.models.trajectory import Trajectory, TrajectoryPoint  # noqa: F401
 from app.models.vehicle_identity import VehicleIdentity, VehicleMatch  # noqa: F401
 from app.models.vehicle_observation import VehicleObservation  # noqa: F401
 from app.models.vehicle_track import TrackPoint, VehicleTrack  # noqa: F401
@@ -24,4 +25,6 @@ __all__ = [
     "TrackPoint",
     "VehicleIdentity",
     "VehicleMatch",
+    "Trajectory",
+    "TrajectoryPoint",
 ]
