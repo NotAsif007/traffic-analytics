@@ -21,11 +21,11 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-import uuid
 from datetime import datetime, timedelta, timezone
+
 from geoalchemy2.elements import WKTElement
-from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -33,13 +33,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from app.config import get_settings
 from app.models.alert import Alert, BlacklistEntry
 from app.models.camera import Camera
-from app.models.camera_connection import CameraConnection
 from app.models.road import Road
-from app.models.trajectory import Trajectory, TrajectoryPoint
-from app.models.vehicle_identity import VehicleIdentity, VehicleMatch
 from app.models.vehicle_observation import VehicleObservation
-from app.models.vehicle_track import TrackPoint, VehicleTrack
-
 
 # City Definitions with Center GPS Coordinates
 CITIES = {
@@ -234,7 +229,7 @@ async def seed_pan_india():
 
     async with session_factory() as session:
         print("[*] Checking database tables...")
-        
+
         # 1. Seed Roads
         road_map: dict[str, Road] = {}
         for r_data in ROADS_DATA:
@@ -262,7 +257,7 @@ async def seed_pan_india():
             existing = (await session.execute(q)).scalar_one_or_none()
             assigned_road = road_map.get(c_data["road_ext"])
             point_wkt = f"POINT({c_data['lng']} {c_data['lat']})"
-            
+
             if not existing:
                 camera = Camera(
                     camera_id=c_data["id"],

@@ -133,13 +133,13 @@ class Trajectory(UUIDMixin, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    identity: Mapped[VehicleIdentity] = relationship("VehicleIdentity", lazy="select")
+    identity: Mapped[VehicleIdentity] = relationship("VehicleIdentity", lazy="selectin")
     points: Mapped[list[TrajectoryPoint]] = relationship(
         "TrajectoryPoint",
         back_populates="trajectory",
         cascade="all, delete-orphan",
         order_by="TrajectoryPoint.sequence_order.asc()",
-        lazy="select",
+        lazy="selectin",
     )
 
     __table_args__ = (
@@ -237,12 +237,12 @@ class TrajectoryPoint(UUIDMixin, TimestampMixin, Base):
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 
     # Relationships
-    trajectory: Mapped[Trajectory] = relationship("Trajectory", back_populates="points")
-    camera: Mapped[Camera] = relationship("Camera", lazy="select")
+    trajectory: Mapped[Trajectory] = relationship("Trajectory", back_populates="points", lazy="selectin")
+    camera: Mapped[Camera] = relationship("Camera", lazy="selectin")
     observation: Mapped[VehicleObservation | None] = relationship(
-        "VehicleObservation", lazy="select"
+        "VehicleObservation", lazy="selectin"
     )
-    track: Mapped[VehicleTrack | None] = relationship("VehicleTrack", lazy="select")
+    track: Mapped[VehicleTrack | None] = relationship("VehicleTrack", lazy="selectin")
 
     __table_args__ = (
         CheckConstraint(

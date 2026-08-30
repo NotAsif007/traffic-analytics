@@ -87,13 +87,15 @@ class CameraConnection(UUIDMixin, TimestampMixin, Base):
         "Camera",
         foreign_keys=[source_camera_id],
         back_populates="outgoing_connections",
+        lazy="selectin",
     )
     destination_camera: Mapped[Camera] = relationship(
         "Camera",
         foreign_keys=[destination_camera_id],
         back_populates="incoming_connections",
+        lazy="selectin",
     )
-    road: Mapped[Road | None] = relationship("Road", lazy="select")
+    road: Mapped[Road | None] = relationship("Road", lazy="selectin")
 
     __table_args__ = (
         # Source and destination must differ

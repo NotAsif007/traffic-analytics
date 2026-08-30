@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Radio } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Radio, Video, Camera, Cpu, RefreshCw, AlertCircle, Wifi } from 'lucide-react';
 
 interface CCTVStreamPlayerProps {
   cameraName: string;
@@ -8,191 +8,322 @@ interface CCTVStreamPlayerProps {
   observationsPerHour: number;
 }
 
-// Authentic Indian CCTV Stream Sources & Scenarios across 6 Metros
-const CAMERA_FEEDS: Record<string, { image: string; roadType: string; activeClasses: string[] }> = {
-  // BENGALURU
-  'BLR-01': {
-    image: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Urban Arterial (MG Road Trinity)',
-    activeClasses: ['AUTO-RICKSHAW 97%', 'MOTORCYCLE 98%', 'CAR 95%'],
-  },
-  'BLR-02': {
-    image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Major Intersection (Brigade Rd)',
-    activeClasses: ['BMTC BUS 99%', 'CAR 96%', 'MOTORCYCLE 94%'],
-  },
-  'BLR-03': {
-    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&auto=format&fit=crop&q=80',
-    roadType: 'High-Density Choke (Silk Board Jct)',
-    activeClasses: ['AUTO-RICKSHAW 98%', 'TWO-WHEELER 97%', 'BUS 99%'],
-  },
-  'BLR-04': {
-    image: 'https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Elevated Corridor (Hebbal Flyover)',
-    activeClasses: ['SUV 98%', 'COMMERCIAL TRUCK 96%', 'CAR 97%'],
-  },
-
-  // DELHI NCR
-  'DEL-01': {
-    image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Ring Road Flyover (AIIMS)',
-    activeClasses: ['SEDAN 99%', 'DTC BUS 98%', 'MOTORCYCLE 95%'],
-  },
-  'DEL-02': {
-    image: 'https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Expressway Toll (DND Flyway)',
-    activeClasses: ['FASTAG CAR 99%', 'SUV 98%', 'VAN 94%'],
-  },
-  'DEL-03': {
-    image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Commercial Expressway (Gurgaon Cyber City)',
-    activeClasses: ['CAB 98%', 'CAR 97%', 'MOTORCYCLE 96%'],
-  },
-
-  // MUMBAI
-  'BOM-01': {
-    image: 'https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Western Express Highway (Bandra)',
-    activeClasses: ['HEAVY TRUCK 97%', 'AUTO-RICKSHAW 98%', 'CAR 96%'],
-  },
-  'BOM-02': {
-    image: 'https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Sea Link Expressway (Bandra-Worli)',
-    activeClasses: ['SEDAN 99%', 'SUV 98%', 'CAR 97%'],
-  },
-  'BOM-03': {
-    image: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Marine Drive Coastal Arterial',
-    activeClasses: ['TAXI 98%', 'CAR 97%', 'TWO-WHEELER 95%'],
-  },
-
-  // HYDERABAD
-  'HYD-01': {
-    image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&auto=format&fit=crop&q=80',
-    roadType: 'IT Corridor (HITEC Cyber Towers)',
-    activeClasses: ['AUTO-RICKSHAW 96%', 'CAR 98%', 'TSRTC BUS 99%'],
-  },
-  'HYD-02': {
-    image: 'https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Financial District (Gachibowli ORR)',
-    activeClasses: ['CAR 99%', 'SUV 97%', 'MOTORCYCLE 96%'],
-  },
-
-  // CHENNAI
-  'MAA-01': {
-    image: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Historic Arterial (Anna Salai)',
-    activeClasses: ['MTC BUS 99%', 'MOTORCYCLE 98%', 'AUTO 96%'],
-  },
-  'MAA-02': {
-    image: 'https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=800&auto=format&fit=crop&q=80',
-    roadType: 'IT Highway (OMR Tidel Park)',
-    activeClasses: ['CAR 98%', 'BUS 99%', 'MOTORCYCLE 97%'],
-  },
-
-  // KOLKATA
-  'CCU-01': {
-    image: 'https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Eastern Bypass (Science City)',
-    activeClasses: ['YELLOW TAXI 99%', 'CAR 96%', 'BUS 98%'],
-  },
-  'CCU-02': {
-    image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&auto=format&fit=crop&q=80',
-    roadType: 'Historic Corridor (Howrah Bridge Approach)',
-    activeClasses: ['WBSTC BUS 99%', 'AMBASSADOR TAXI 98%', 'MINIVAN 95%'],
-  },
-};
-
-const DEFAULT_FEED = {
-  image: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=800&auto=format&fit=crop&q=80',
-  roadType: 'Indian Metropolitan Surveillance Network',
-  activeClasses: ['AUTO-RICKSHAW 96%', 'CAR 97%', 'MOTORCYCLE 95%'],
-};
+type StreamMode = 'traffic' | 'webcam' | 'ai_mjpeg';
 
 export const CCTVStreamPlayer: React.FC<CCTVStreamPlayerProps> = ({
   cameraName,
   cameraId,
-  intensity,
-  observationsPerHour,
 }) => {
+  const [mode, setMode] = useState<StreamMode>('traffic');
   const [timestamp, setTimestamp] = useState(new Date());
   const [bitrate, setBitrate] = useState(4180);
+  const [webcamError, setWebcamError] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState(false);
 
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const webcamVideoRef = useRef<HTMLVideoElement | null>(null);
+  const webcamStreamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+
+  // Reliable traffic video URLs
+  const videoSrc =
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+
+  // Clock & bitrate ticker
   useEffect(() => {
     const timer = setInterval(() => {
       setTimestamp(new Date());
-      setBitrate(4000 + Math.floor(Math.random() * 350));
+      setBitrate(3900 + Math.floor(Math.random() * 400));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const feedKey = Object.keys(CAMERA_FEEDS).find(
-    (k) => cameraName.toUpperCase().includes(k) || cameraId.toUpperCase().includes(k)
-  ) || 'default';
-  const feed = CAMERA_FEEDS[feedKey] || DEFAULT_FEED;
+  // Procedural Canvas Traffic Engine
+  useEffect(() => {
+    if (mode === 'traffic' && videoError) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      let frameCount = 0;
+      const vehicles = [
+        { x: 50, y: 90, vx: 2.2, color: '#38bdf8', class: 'CAR', plate: 'KA01MJ5005', w: 60, h: 32 },
+        { x: 260, y: 135, vx: -1.8, color: '#f59e0b', class: 'BUS', plate: 'DL01CA1001', w: 90, h: 42 },
+        { x: 180, y: 190, vx: 2.8, color: '#34d399', class: 'AUTO', plate: 'MH02BX9988', w: 45, h: 28 },
+      ];
+
+      const render = () => {
+        frameCount++;
+        ctx.fillStyle = '#141418';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Asphalt road texture & lanes
+        ctx.strokeStyle = '#27272a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 75); ctx.lineTo(canvas.width, 75);
+        ctx.moveTo(0, 170); ctx.lineTo(canvas.width, 170);
+        ctx.stroke();
+
+        // Dashed center lines
+        ctx.strokeStyle = '#71717a';
+        ctx.setLineDash([15, 15]);
+        ctx.lineDashOffset = -frameCount * 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 122); ctx.lineTo(canvas.width, 122);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Render moving vehicles
+        vehicles.forEach((v) => {
+          v.x += v.vx;
+          if (v.x > canvas.width + 100) v.x = -100;
+          if (v.x < -120) v.x = canvas.width + 50;
+
+          // Vehicle body
+          ctx.fillStyle = v.color;
+          ctx.fillRect(v.x, v.y, v.w, v.h);
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(v.x, v.y, v.w, v.h);
+
+          // Headlights
+          ctx.fillStyle = '#fef08a';
+          if (v.vx > 0) {
+            ctx.fillRect(v.x + v.w - 2, v.y + 4, 3, 6);
+            ctx.fillRect(v.x + v.w - 2, v.y + v.h - 10, 3, 6);
+          } else {
+            ctx.fillRect(v.x - 1, v.y + 4, 3, 6);
+            ctx.fillRect(v.x - 1, v.y + v.h - 10, 3, 6);
+          }
+
+          // AI Detection Bounding Box
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(v.x - 4, v.y - 4, v.w + 8, v.h + 8);
+
+          // Detection tag
+          ctx.fillStyle = '#10b981';
+          ctx.fillRect(v.x - 4, v.y - 18, 55, 14);
+          ctx.fillStyle = '#042f2e';
+          ctx.font = 'bold 9px monospace';
+          ctx.fillText(`${v.class} 98%`, v.x - 2, v.y - 8);
+
+          // Plate badge
+          ctx.fillStyle = 'rgba(9, 9, 11, 0.9)';
+          ctx.fillRect(v.x, v.y + v.h + 4, v.w, 13);
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText(v.plate, v.x + 2, v.y + v.h + 13);
+        });
+
+        animFrameRef.current = requestAnimationFrame(render);
+      };
+
+      render();
+      return () => {
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      };
+    }
+  }, [mode, videoError]);
+
+  // Handle Webcam mode
+  useEffect(() => {
+    if (mode === 'webcam') {
+      startWebcam();
+    } else {
+      stopWebcam();
+    }
+    return () => {
+      stopWebcam();
+    };
+  }, [mode]);
+
+  const startWebcam = async () => {
+    setWebcamError(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access not supported on this device/browser.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      webcamStreamRef.current = stream;
+      if (webcamVideoRef.current) {
+        webcamVideoRef.current.srcObject = stream;
+        webcamVideoRef.current.play();
+      }
+    } catch (err: any) {
+      setWebcamError(err.message || 'Webcam permission denied or camera in use.');
+    }
+  };
+
+  const stopWebcam = () => {
+    if (webcamStreamRef.current) {
+      webcamStreamRef.current.getTracks().forEach((t) => t.stop());
+      webcamStreamRef.current = null;
+    }
+    if (webcamVideoRef.current) {
+      webcamVideoRef.current.srcObject = null;
+    }
+  };
+
+  const backendStreamUrl = `http://localhost:8000/api/v1/cameras/${cameraId}/stream`;
 
   return (
-    <div className="relative rounded overflow-hidden border border-[#292932] aspect-video bg-[#050508] group select-none shadow-lg">
-      {/* CCTV Camera Background Frame */}
-      <img
-        src={feed.image}
-        alt={`Live Indian CCTV feed for ${cameraName}`}
-        className="w-full h-full object-cover filter contrast-[1.15] brightness-90 saturate-[0.85]"
-      />
+    <div className="flex flex-col gap-3 w-full">
+      {/* Apple-style Segmented Stream Source Selector */}
+      <div className="flex items-center bg-[#18181f]/80 p-1 rounded-xl border border-white/[0.08] backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="flex items-center gap-1 w-full">
+          <button
+            type="button"
+            onClick={() => {
+              setMode('traffic');
+              setVideoError(false);
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+              mode === 'traffic'
+                ? 'bg-white/[0.12] text-white shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] border border-white/[0.12]'
+                : 'text-[#8e8e93] hover:text-[#f4f4f5] hover:bg-white/[0.04]'
+            }`}
+          >
+            <Video className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+            <span>Traffic Stream</span>
+          </button>
 
-      {/* CCTV Scanning Scanline Effect */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] pointer-events-none opacity-30" />
+          <button
+            type="button"
+            onClick={() => setMode('webcam')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+              mode === 'webcam'
+                ? 'bg-white/[0.12] text-white shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] border border-white/[0.12]'
+                : 'text-[#8e8e93] hover:text-[#f4f4f5] hover:bg-white/[0.04]'
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5 shrink-0 text-cyan-400" />
+            <span>Webcam</span>
+          </button>
 
-      {/* Simulated AI Object Detection Bounding Boxes Overlay */}
-      <div className="absolute inset-0 pointer-events-none p-3">
-        {/* Detection Box 1: Primary Vehicle */}
-        <div className="absolute top-[28%] left-[18%] w-[34%] h-[44%] border-2 border-emerald-400/80 rounded-sm bg-emerald-500/10 transition-all duration-700">
-          <div className="absolute -top-5 left-0 px-1 py-0.2 bg-emerald-500 text-[#0d0096] font-mono font-bold text-[9px] uppercase tracking-wider flex items-center gap-1 shadow">
-            <span>{feed.activeClasses[0] || 'VEHICLE 97%'}</span>
+          <button
+            type="button"
+            onClick={() => setMode('ai_mjpeg')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+              mode === 'ai_mjpeg'
+                ? 'bg-white/[0.12] text-white shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] border border-white/[0.12]'
+                : 'text-[#8e8e93] hover:text-[#f4f4f5] hover:bg-white/[0.04]'
+            }`}
+          >
+            <Cpu className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+            <span>Backend AI</span>
+          </button>
+        </div>
+      </div>
+
+      {/* CCTV Screen Frame */}
+      <div className="relative rounded-2xl overflow-hidden border border-white/[0.1] aspect-video bg-[#0c0c0e] select-none shadow-2xl">
+        {/* Mode 1: Traffic Video Stream */}
+        {mode === 'traffic' && !videoError && (
+          <video
+            ref={videoRef}
+            src={videoSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            onError={() => setVideoError(true)}
+            className="w-full h-full object-cover filter contrast-[1.08] brightness-95"
+          />
+        )}
+
+        {/* Fallback Traffic Canvas Simulation */}
+        {mode === 'traffic' && videoError && (
+          <canvas
+            ref={canvasRef}
+            width={480}
+            height={270}
+            className="w-full h-full object-cover"
+          />
+        )}
+
+        {/* Mode 2: Device Webcam */}
+        {mode === 'webcam' && (
+          <div className="w-full h-full relative">
+            <video
+              ref={webcamVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+            {webcamError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#09090b]/95 text-center p-4">
+                <AlertCircle className="w-7 h-7 text-rose-400 mb-1.5" />
+                <div className="text-xs font-semibold text-rose-300 mb-1">Webcam Permission Required</div>
+                <div className="text-[11px] text-[#a1a1aa] max-w-xs">{webcamError}</div>
+                <button
+                  onClick={startWebcam}
+                  className="mt-3 px-3.5 py-1.5 apple-button-primary rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3 h-3" /> Retry Access
+                </button>
+              </div>
+            )}
           </div>
-          <div className="absolute bottom-0 right-0 px-1 bg-[#0d0d15]/90 text-[8px] font-mono text-emerald-400">
-            [ANPR OK]
+        )}
+
+        {/* Mode 3: Backend AI MJPEG Stream */}
+        {mode === 'ai_mjpeg' && (
+          <img
+            src={backendStreamUrl}
+            alt={`Live AI Stream for ${cameraName}`}
+            className="w-full h-full object-cover"
+            onError={() => {
+              setVideoError(true);
+              setMode('traffic');
+            }}
+          />
+        )}
+
+        {/* Subtle scanline overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px] pointer-events-none opacity-10" />
+
+        {/* Top-Left OSD Header */}
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-2 pointer-events-none z-10">
+          <div className="flex items-center gap-1.5 bg-[#09090b]/80 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/[0.1] text-xs font-medium text-emerald-400 shadow-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-[10px] font-bold tracking-wider">
+              {mode === 'webcam' ? 'LOCAL WEBCAM' : (mode === 'ai_mjpeg' ? 'AI MJPEG' : 'RTSP STREAM')}
+            </span>
+          </div>
+          <div className="bg-[#09090b]/75 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/[0.08] text-[10px] font-medium text-[#f4f4f5] max-w-[150px] truncate shadow-md">
+            {cameraName}
           </div>
         </div>
 
-        {/* Detection Box 2: Two-Wheeler / Bike */}
-        <div className="absolute top-[38%] right-[16%] w-[22%] h-[36%] border border-[#38bdf8]/80 rounded-sm bg-[#38bdf8]/10 transition-all duration-700">
-          <div className="absolute -top-4 left-0 px-1 py-0.2 bg-[#38bdf8] text-[#0d0d15] font-mono font-bold text-[8px] uppercase tracking-wider">
-            <span>{feed.activeClasses[1] || 'MOTORCYCLE 98%'}</span>
+        {/* Top-Right OSD Telemetry */}
+        <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1 pointer-events-none z-10">
+          <div className="bg-[#09090b]/80 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/[0.1] text-[10px] font-mono text-emerald-400 shadow-md font-semibold">
+            {timestamp.toISOString().replace('T', ' ').substring(11, 19)} UTC
+          </div>
+          <div className="text-[9px] font-mono text-[#a1a1aa] px-2 py-0.5 bg-[#09090b]/70 backdrop-blur-md rounded-lg border border-white/[0.05]">
+            {bitrate} kbps • 30 FPS
           </div>
         </div>
-      </div>
 
-      {/* CCTV Top Left OSD (On-Screen Display) */}
-      <div className="absolute top-2 left-2 flex flex-col gap-0.5 pointer-events-none">
-        <div className="flex items-center gap-1.5 bg-[#0d0d15]/85 px-2 py-0.5 rounded border border-[#292932] font-mono text-[10px] text-emerald-400 backdrop-blur-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-          <span className="font-bold tracking-wider">RTSP LIVE • CCTV-IN</span>
+        {/* Bottom Bar Info */}
+        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-10 text-[10px] font-medium">
+          <div className="bg-[#09090b]/80 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/[0.1] text-[#a1a1aa] flex items-center gap-1.5 shadow-md">
+            <Wifi className="w-3 h-3 text-emerald-400" />
+            <span>Corridor Sensor Active</span>
+          </div>
+          <div className="bg-emerald-500/15 backdrop-blur-md border border-emerald-500/30 px-2.5 py-1 rounded-xl text-emerald-300 flex items-center gap-1.5 shadow-md">
+            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+            <span>YOLOv8 + ByteTrack</span>
+          </div>
         </div>
-        <div className="bg-[#0d0d15]/80 px-2 py-0.5 rounded text-[9px] font-mono text-[#e4e1ed]">
-          CAM: <span className="font-bold text-[#c0c1ff]">{cameraName}</span>
-        </div>
-      </div>
-
-      {/* CCTV Top Right OSD: Live IST Time & Telemetry */}
-      <div className="absolute top-2 right-2 text-right bg-[#0d0d15]/85 px-2 py-1 rounded border border-[#292932] font-mono text-[9px] text-[#e4e1ed] backdrop-blur-sm pointer-events-none">
-        <div className="text-emerald-400 font-bold">
-          {timestamp.toISOString().replace('T', ' ').substring(0, 19)} IST
-        </div>
-        <div className="text-[#908fa0] text-[8px]">
-          {bitrate} kbps • 30.0 FPS • H.265
-        </div>
-      </div>
-
-      {/* CCTV Bottom Left: Location & Corridor */}
-      <div className="absolute bottom-2 left-2 bg-[#0d0d15]/85 px-2 py-0.5 rounded border border-[#292932] font-mono text-[9px] text-[#908fa0] backdrop-blur-sm pointer-events-none">
-        LOC: <strong className="text-[#e4e1ed]">{feed.roadType}</strong>
-      </div>
-
-      {/* CCTV Bottom Right: AI Inference Engine Badge */}
-      <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-[#8083ff]/20 border border-[#8083ff]/40 px-1.5 py-0.5 rounded font-mono text-[8px] text-[#c0c1ff] backdrop-blur-sm pointer-events-none">
-        <Radio className="w-2.5 h-2.5 text-[#8083ff] animate-pulse" />
-        <span>YOLOv8-ANPR • Pan-India</span>
       </div>
     </div>
   );

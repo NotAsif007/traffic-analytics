@@ -81,6 +81,8 @@ class InMemoryEventBus(EventBus):
         self._processed_keys_order: list[str] = []
         self._max_keys = max_processed_keys
         self._dead_letter = dead_letter_store or InMemoryDeadLetterStore()
+        self._recent_events: list[DomainEvent] = []
+        self._listeners: set[asyncio.Queue[DomainEvent]] = set()
 
     def subscribe(self, event_type: str, handler: EventHandler) -> None:
         if handler not in self._handlers[event_type]:
@@ -91,10 +93,52 @@ class InMemoryEventBus(EventBus):
         if handler in self._handlers[event_type]:
             self._handlers[event_type].remove(handler)
 
+    def add_listener(self, queue: asyncio.Queue[DomainEvent]) -> None:
+        """Register an active async queue for live SSE / WebSocket event streaming."""
+        self._listeners.add(queue)
+
+    def remove_listener(self, queue: asyncio.Queue[DomainEvent]) -> None:
+        """Unregister an async queue when a stream client disconnects."""
+        self._listeners.discard(queue)
+
+    def get_recent(
+        self, limit: int = 50, event_type: str | None = None
+    ) -> list[DomainEvent]:
+        """Return the most recent domain events buffered in memory."""
+        events = self._recent_events
+        if event_type:
+            events = [e for e in events if e.event_type == event_type]
+        return list(reversed(events[-limit:]))
+
     async def publish(self, event: DomainEvent) -> EventProcessingResult:
         """
         Publish an event to all subscribers with idempotency checking and dead-letter safety.
         """
+        # Record into rolling recent events buffer
+        self._recent_events.append(event)
+        if len(self._recent_events) > 500:
+            self._recent_events.pop(0)
+
+        # Notify active streaming listeners (e.g. SSE / Terminal / UI monitors)
+        for listener_q in list(self._listeners):
+            try:
+                listener_q.put_nowait(event)
+            except asyncio.QueueFull:
+                pass
+            except Exception:
+                self._listeners.discard(listener_q)
+
+        p = event.payload if isinstance(event.payload, dict) else {}
+        logger.info(
+            "telemetry.live_event",
+            event_type=event.event_type,
+            source=event.source,
+            plate=p.get("plate_text"),
+            camera=p.get("camera_name") or p.get("camera_id"),
+            vehicle_class=p.get("vehicle_class"),
+            speed=p.get("estimated_speed_kmh"),
+        )
+
         # Idempotency check
         dedup_key = event.idempotency_key or event.event_id
         if dedup_key in self._processed_keys:

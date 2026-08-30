@@ -58,12 +58,12 @@ def load_dataset(dataset_code: str, samples_dir: str) -> list[ParsedDatasetObser
     print(f"\n{BOLD}{CYAN}---------------------------------------------------------------{RESET}")
     print(f"{BOLD}{CYAN}  DATASET: {summary.dataset_name} [{summary.dataset_code.upper()}]{RESET}")
     print(f"{BOLD}{CYAN}---------------------------------------------------------------{RESET}")
-    print(f"  • Description:         {summary.description}")
-    print(f"  • Total Observations:  {GREEN}{summary.total_observations}{RESET}")
-    print(f"  • Unique Vehicles:     {GREEN}{summary.unique_vehicles}{RESET}")
-    print(f"  • Supported Classes:   {', '.join(summary.supported_classes)}")
-    print(f"  • License Plates:      {'YES' if summary.has_license_plates else 'NO'}")
-    print(f"  • Multi-Camera IDs:    {'YES' if summary.has_multi_camera_ids else 'NO'}\n")
+    print(f"  * Description:         {summary.description}")
+    print(f"  * Total Observations:  {GREEN}{summary.total_observations}{RESET}")
+    print(f"  * Unique Vehicles:     {GREEN}{summary.unique_vehicles}{RESET}")
+    print(f"  * Supported Classes:   {', '.join(summary.supported_classes)}")
+    print(f"  * License Plates:      {'YES' if summary.has_license_plates else 'NO'}")
+    print(f"  * Multi-Camera IDs:    {'YES' if summary.has_multi_camera_ids else 'NO'}\n")
 
     print(f"{BOLD}Sample Parsed Sightings:{RESET}")
     for idx, obs in enumerate(observations[:4]):
@@ -78,13 +78,32 @@ def load_dataset(dataset_code: str, samples_dir: str) -> list[ParsedDatasetObser
 def inject_observations_to_api(observations: list[ParsedDatasetObservation], api_url: str):
     import urllib.error
     import urllib.request
+    import uuid
+
+    # First fetch available active cameras from API
+    cameras_url = f"{api_url.rstrip('/')}/api/v1/cameras/?page_size=20"
+    target_camera_id = None
+    try:
+        req_c = urllib.request.Request(cameras_url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req_c, timeout=5) as r:
+            c_data = json.loads(r.read().decode("utf-8"))
+            items = c_data.get("items", [])
+            if items:
+                target_camera_id = items[0].get("id")
+    except Exception:
+        pass
+
+    obs_payloads = []
+    for idx, obs in enumerate(observations):
+        d = obs.to_observation_create().model_dump(mode="json")
+        if target_camera_id:
+            d["camera_id"] = target_camera_id
+        # Ensure unique source_observation_id for repeated runs
+        d["source_observation_id"] = f"{obs.dataset_name.lower().replace(' ', '_')}-{uuid.uuid4().hex[:8]}-{idx}"
+        obs_payloads.append(d)
 
     url = f"{api_url.rstrip('/')}/api/v1/observations/bulk"
-    payload = {
-        "observations": [
-            obs.to_observation_create().model_dump(mode="json") for obs in observations
-        ]
-    }
+    payload = {"observations": obs_payloads}
     data_bytes = json.dumps(payload).encode("utf-8")
 
     req = urllib.request.Request(
@@ -98,13 +117,13 @@ def inject_observations_to_api(observations: list[ParsedDatasetObservation], api
         with urllib.request.urlopen(req, timeout=10) as resp:
             body = json.loads(resp.read().decode("utf-8"))
             print(
-                f"\n{BOLD}{GREEN}✓ Successfully Injected {len(observations)} observations into API!{RESET}"
+                f"\n{BOLD}{GREEN}[OK] Successfully Injected {len(observations)} observations into API!{RESET}"
             )
             print(
                 f"  Response: Accepted={body.get('accepted_count', len(observations))}, Rejected={body.get('rejected_count', 0)}"
             )
     except urllib.error.URLError as e:
-        print(f"\n{YELLOW}⚠ Could not connect to API at {url} ({e}){RESET}")
+        print(f"\n{YELLOW}[WARN] Could not connect to API at {url} ({e}){RESET}")
         print("  Ensure backend server is running with: uvicorn app.main:app --port 8000")
 
 

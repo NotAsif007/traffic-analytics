@@ -45,7 +45,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0b0f19] text-[#e4e1ed] overflow-hidden">
+    <div className="flex flex-col h-screen w-screen bg-[#09090b] text-[#f4f4f5] overflow-hidden">
       {/* Top Fixed Navbar */}
       <Navbar
         activeTab={activeTab}

@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from app.config import Settings, get_settings
 from app.db.base import Base
@@ -95,7 +96,7 @@ async def engine(settings: Settings) -> AsyncGenerator[AsyncEngine, None]:
     _engine = create_async_engine(
         str(settings.DATABASE_URL),
         echo=False,
-        pool_pre_ping=True,
+        poolclass=NullPool,
     )
     yield _engine
     await _engine.dispose()

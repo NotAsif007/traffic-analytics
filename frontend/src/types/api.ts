@@ -235,13 +235,17 @@ export interface BlacklistEntry {
 }
 
 export interface EvaluationReport {
-  timestamp: string;
+  // Backend may return either field name for the timestamp
+  timestamp?: string;
+  evaluation_timestamp?: string;
   benchmark_name: string;
   dataset_summary: {
     total_cameras: number;
     total_vehicles: number;
     total_observations: number;
-    total_anomalous_events: number;
+    // backend field: total_anomalous_events or blacklisted_vehicles
+    total_anomalous_events?: number;
+    blacklisted_vehicles?: number;
   };
   anpr: {
     detection_precision: number;
@@ -249,7 +253,9 @@ export interface EvaluationReport {
     detection_f1: number;
     exact_plate_accuracy: number;
     normalized_plate_accuracy: number;
-    character_accuracy: number;
+    // backend field name: average_character_accuracy
+    character_accuracy?: number;
+    average_character_accuracy?: number;
     mean_ocr_confidence: number;
   };
   tracking: {
@@ -261,16 +267,22 @@ export interface EvaluationReport {
   association: {
     precision: number;
     recall: number;
-    f1: number;
+    // backend field name: f1_score
+    f1?: number;
+    f1_score?: number;
     trajectory_completeness_rate: number;
   };
   alerts: {
     precision: number;
     recall: number;
-    f1: number;
+    // backend field name: f1_score
+    f1?: number;
+    f1_score?: number;
     false_positive_rate: number;
   };
-  overall_composite_score: number;
+  // backend field name: overall_system_score
+  overall_composite_score?: number;
+  overall_system_score?: number;
 }
 
 export interface DatasetSummary {
@@ -323,3 +335,28 @@ export interface RealDatasetEvaluationReport {
   robustness_score: number;
   composite_indian_readiness_score: number;
 }
+
+export interface PredictedNextHop {
+  camera_id: string;
+  camera_name: string;
+  road_name?: string | null;
+  probability: number;
+  distance_meters: number;
+  estimated_travel_time_seconds: number;
+  estimated_arrival_time: string;
+  confidence_score: number;
+}
+
+export interface TrajectoryPredictionResponse {
+  trajectory_id: string;
+  vehicle_identity_id: string;
+  current_camera_id: string;
+  current_camera_name: string;
+  last_seen_timestamp: string;
+  current_speed_kmh?: number | null;
+  predicted_next_hops: PredictedNextHop[];
+  predicted_destination_corridor?: string | null;
+  deviation_risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
+  forecast_method: string;
+}
+

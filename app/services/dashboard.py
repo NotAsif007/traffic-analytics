@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
+import shapely.geometry
+from geoalchemy2.shape import to_shape
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -37,15 +39,12 @@ from app.services.analytics import AnalyticsService
 
 logger = get_logger(__name__)
 
-from geoalchemy2.shape import to_shape
-import shapely.geometry
-
 
 def _extract_lat_lon(geom_elem) -> tuple[float, float]:
     """Safely extract (latitude, longitude) from a PostGIS POINT geometry or mock object."""
     if not geom_elem:
         return 0.0, 0.0
-    if hasattr(geom_elem, "coordinates") and isinstance(geom_elem.coordinates, (list, tuple)) and len(geom_elem.coordinates) >= 2:
+    if hasattr(geom_elem, "coordinates") and isinstance(geom_elem.coordinates, list | tuple) and len(geom_elem.coordinates) >= 2:
         return float(geom_elem.coordinates[1]), float(geom_elem.coordinates[0])
     try:
         shp = to_shape(geom_elem)
@@ -71,7 +70,7 @@ def _extract_line_coords(geom_elem) -> list[list[float]]:
     """Safely extract [[lat, lon], ...] from a PostGIS LINESTRING geometry or mock object."""
     if not geom_elem:
         return []
-    if hasattr(geom_elem, "coordinates") and isinstance(geom_elem.coordinates, (list, tuple)):
+    if hasattr(geom_elem, "coordinates") and isinstance(geom_elem.coordinates, list | tuple):
         return [list(c) for c in geom_elem.coordinates]
     try:
         shp = to_shape(geom_elem)
@@ -519,9 +518,9 @@ class DashboardService:
         )
         hourly_trend = [
             {
-                "bucket": b.timestamp_bucket.isoformat(),
-                "total": b.total_volume,
-                "classes": b.by_vehicle_class,
+                "bucket": b.bucket_start.isoformat(),
+                "total": b.vehicle_count,
+                "classes": b.vehicle_class_counts,
             }
             for b in vol_resp.buckets
         ]
@@ -551,11 +550,31 @@ class DashboardService:
                 )
 
         # 4. Top Routes & OD Flows
-        routes_resp = await self._analytics.get_route_frequency(limit=5)
-        top_routes = [r.model_dump() for r in routes_resp.routes]
+        routes_resp = await self._analytics.get_route_frequency(
+            start_time=one_day_ago, end_time=now, limit=5
+        )
+        top_routes = [
+            {
+                "route_key": r.route_summary,
+                "camera_sequence": r.route_camera_names or [r.route_summary],
+                "frequency_count": r.trip_count,
+                "avg_travel_time_s": int(r.average_duration_seconds),
+            }
+            for r in routes_resp.top_routes
+        ]
 
-        od_resp = await self._analytics.get_od_matrix(limit=5)
-        top_od = [od.model_dump() for od in od_resp.matrix]
+        od_resp = await self._analytics.get_od_matrix(
+            start_time=one_day_ago, end_time=now
+        )
+        top_od = [
+            {
+                "origin_zone": od.origin_camera_name or "Origin Node",
+                "destination_zone": od.destination_camera_name or "Destination Node",
+                "trip_count": od.trip_count,
+                "avg_travel_time_s": int(od.average_duration_seconds),
+            }
+            for od in od_resp.matrix[:5]
+        ]
 
         return DashboardAnalyticsSummaryResponse(
             generated_at=now,

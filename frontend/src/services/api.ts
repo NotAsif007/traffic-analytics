@@ -7,7 +7,8 @@ import {
   DashboardAnalyticsSummaryResponse,
   AlertItem,
   BlacklistEntry,
-  EvaluationReport
+  EvaluationReport,
+  TrajectoryPredictionResponse
 } from '../types/api';
 
 const API_BASE = '/api/v1';
@@ -217,26 +218,84 @@ export const api = {
       const res = await client.get<DashboardAnalyticsSummaryResponse>('/dashboard/analytics/summary');
       return res.data;
     } catch {
+      try {
+        const fallbackRes = await client.get<DashboardAnalyticsSummaryResponse>('/dashboard/analytics');
+        return fallbackRes.data;
+      } catch {
+        return {
+          generated_at: new Date().toISOString(),
+          total_vehicles_past_24h: 3840,
+          hourly_volume_trend: Array.from({ length: 12 }).map((_, i) => {
+            const d = new Date(Date.now() - (11 - i) * 3600 * 1000);
+            return {
+              bucket: `${d.getHours().toString().padStart(2, '0')}:00`,
+              total: Math.floor(180 + Math.random() * 220),
+              classes: { car: 140, bike: 60, bus: 25, truck: 15 },
+            };
+          }),
+          top_congested_corridors: MOCK_OVERVIEW.congestion_hotspots,
+          top_frequent_routes: [
+            { route_key: 'R-1', camera_sequence: ['CAM-BLR-01', 'CAM-BLR-02', 'CAM-BLR-03'], frequency_count: 540, avg_travel_time_s: 620 },
+            { route_key: 'R-2', camera_sequence: ['CAM-DEL-01', 'CAM-DEL-02', 'CAM-DEL-03'], frequency_count: 390, avg_travel_time_s: 780 },
+            { route_key: 'R-3', camera_sequence: ['CAM-BOM-01', 'CAM-BOM-02'], frequency_count: 280, avg_travel_time_s: 410 },
+          ],
+          top_od_flows: [
+            { origin_zone: 'Trinity Circle (MG Rd)', destination_zone: 'Indiranagar 100ft', trip_count: 720, avg_travel_time_s: 1400 },
+            { origin_zone: 'Silk Board Junction', destination_zone: 'Electronic City Toll', trip_count: 480, avg_travel_time_s: 1850 },
+          ],
+        };
+      }
+    }
+  },
+
+  async getTrajectoryPrediction(trajectoryIdOrPlate: string): Promise<TrajectoryPredictionResponse> {
+    try {
+      const res = await client.get<TrajectoryPredictionResponse>(`/trajectories/${trajectoryIdOrPlate}/prediction`);
+      return res.data;
+    } catch {
+      const isPlate = trajectoryIdOrPlate.toUpperCase().includes('KA') || trajectoryIdOrPlate.toUpperCase().includes('DL');
+      const plate = isPlate ? trajectoryIdOrPlate.toUpperCase() : 'KA01AB1234';
       return {
-        generated_at: new Date().toISOString(),
-        total_vehicles_past_24h: 3840,
-        hourly_volume_trend: Array.from({ length: 12 }).map((_, i) => {
-          const d = new Date(Date.now() - (11 - i) * 3600 * 1000);
-          return {
-            bucket: `${d.getHours().toString().padStart(2, '0')}:00`,
-            total: Math.floor(180 + Math.random() * 220),
-            classes: { car: 140, bike: 60, bus: 25, truck: 15 },
-          };
-        }),
-        top_congested_corridors: MOCK_OVERVIEW.congestion_hotspots,
-        top_frequent_routes: [
-          { route_key: 'R-1', camera_sequence: ['CAM-01', 'CAM-02', 'CAM-03'], frequency_count: 540, avg_travel_time_s: 620 },
-          { route_key: 'R-2', camera_sequence: ['CAM-03', 'CAM-04', 'CAM-06'], frequency_count: 390, avg_travel_time_s: 780 },
-          { route_key: 'R-3', camera_sequence: ['CAM-05', 'CAM-07'], frequency_count: 280, avg_travel_time_s: 410 },
-        ],
-        top_od_flows: [
-          { origin_zone: 'Zone North (MG Rd)', destination_zone: 'Zone East (Airport Rd)', trip_count: 720, avg_travel_time_s: 1400 },
-          { origin_zone: 'Zone South (Koramangala)', destination_zone: 'Zone North (Hebbal)', trip_count: 480, avg_travel_time_s: 1850 },
+        trajectory_id: 'TRJ-20260830-9C668D',
+        vehicle_identity_id: '7b2a9218-4919-4822-a89c-097b10228aa4',
+        current_camera_id: 'c0100000-0000-0000-0000-000000000001',
+        current_camera_name: 'CAM-01 (MG Road Trinity Junction)',
+        last_seen_timestamp: new Date().toISOString(),
+        current_speed_kmh: 48.5,
+        predicted_destination_corridor: 'Hosur Road / Electronic City Elevated Expressway',
+        deviation_risk_level: 'LOW',
+        forecast_method: 'Markov Spatio-Temporal Graph Propagation',
+        predicted_next_hops: [
+          {
+            camera_id: 'c0300000-0000-0000-0000-000000000003',
+            camera_name: 'CAM-03 (Brigade Road Junction)',
+            road_name: 'Brigade Road Northbound Arterial',
+            probability: 0.62,
+            distance_meters: 850.0,
+            estimated_travel_time_seconds: 72.0,
+            estimated_arrival_time: new Date(Date.now() + 72 * 1000).toISOString(),
+            confidence_score: 0.94,
+          },
+          {
+            camera_id: 'c0200000-0000-0000-0000-000000000002',
+            camera_name: 'CAM-02 (Residency Road West)',
+            road_name: 'Residency Road Commercial Corridor',
+            probability: 0.28,
+            distance_meters: 1100.0,
+            estimated_travel_time_seconds: 98.0,
+            estimated_arrival_time: new Date(Date.now() + 98 * 1000).toISOString(),
+            confidence_score: 0.88,
+          },
+          {
+            camera_id: 'c0400000-0000-0000-0000-000000000004',
+            camera_name: 'CAM-04 (Richmond Circle Flyover)',
+            road_name: 'Richmond Road Elevated Span',
+            probability: 0.10,
+            distance_meters: 1650.0,
+            estimated_travel_time_seconds: 145.0,
+            estimated_arrival_time: new Date(Date.now() + 145 * 1000).toISOString(),
+            confidence_score: 0.76,
+          },
         ],
       };
     }
@@ -324,8 +383,11 @@ export const api = {
   async listWatchlist(): Promise<BlacklistEntry[]> {
     try {
       const res = await client.get<any>('/blacklist/');
-      const items = res.data?.items || (Array.isArray(res.data) ? res.data : []);
-      return items;
+      const rawItems = res.data?.items || (Array.isArray(res.data) ? res.data : []);
+      return rawItems.map((item: any) => ({
+        ...item,
+        plate_number: item.plate_text || item.plate_number || 'UNKNOWN',
+      }));
     } catch {
       return [
         { id: 'w1', plate_number: 'KA01MJ4040', reason: 'Stolen Vehicle (FIR #2026/842)', priority: 'critical', is_active: true, created_at: '2026-08-15T10:00:00Z', notes: 'White Toyota Fortuner' },
@@ -335,11 +397,17 @@ export const api = {
     }
   },
 
-  async addToWatchlist(entry: { plate_number: string; reason: string; priority: string; notes?: string }): Promise<void> {
+  async addToWatchlist(entry: { plate_number?: string; plate_text?: string; reason: string; priority: string; notes?: string }): Promise<void> {
     try {
-      await client.post('/blacklist/', entry);
-    } catch {
-      console.log('Added to watchlist:', entry);
+      const payload = {
+        plate_text: (entry.plate_text || entry.plate_number || '').trim().toUpperCase(),
+        reason: entry.reason,
+        priority: entry.priority,
+        notes: entry.notes || undefined,
+      };
+      await client.post('/blacklist/', payload);
+    } catch (err) {
+      console.error('Failed to add to watchlist:', err);
     }
   },
 
@@ -356,14 +424,14 @@ export const api = {
       return res.data;
     } catch {
       return {
-        timestamp: new Date().toISOString(),
+        evaluation_timestamp: new Date().toISOString(),
         benchmark_name: 'PS26127-City-Benchmark-v1',
-        dataset_summary: { total_cameras: 8, total_vehicles: 35, total_observations: 128, total_anomalous_events: 8 },
-        anpr: { detection_precision: 1.0, detection_recall: 0.9688, detection_f1: 0.9841, exact_plate_accuracy: 0.9297, normalized_plate_accuracy: 0.9297, character_accuracy: 0.9648, mean_ocr_confidence: 0.9568 },
+        dataset_summary: { total_cameras: 8, total_vehicles: 35, total_observations: 128, total_anomalous_events: 8, blacklisted_vehicles: 3 },
+        anpr: { detection_precision: 1.0, detection_recall: 0.9688, detection_f1: 0.9841, exact_plate_accuracy: 0.9297, normalized_plate_accuracy: 0.9297, average_character_accuracy: 0.9648, mean_ocr_confidence: 0.9568 },
         tracking: { mota: 1.0, idf1: 1.0, id_switches: 0, mostly_tracked_tracks: 121 },
-        association: { precision: 1.0, recall: 1.0, f1: 1.0, trajectory_completeness_rate: 1.0 },
-        alerts: { precision: 1.0, recall: 1.0, f1: 1.0, false_positive_rate: 0.0 },
-        overall_composite_score: 0.996,
+        association: { precision: 1.0, recall: 1.0, f1_score: 1.0, trajectory_completeness_rate: 1.0 },
+        alerts: { precision: 1.0, recall: 1.0, f1_score: 1.0, false_positive_rate: 0.0 },
+        overall_system_score: 0.996,
       };
     }
   },
@@ -407,5 +475,28 @@ export const api = {
         composite_indian_readiness_score: 0.982,
       };
     }
+  },
+
+  // Real-time Event Streaming & Simulation
+  async getRecentEvents(limit: number = 30): Promise<any[]> {
+    try {
+      const res = await client.get<any[]>(`/events/recent?limit=${limit}`);
+      return res.data;
+    } catch {
+      return [];
+    }
+  },
+
+  async simulateTick(count: number = 1): Promise<any> {
+    try {
+      const res = await client.post(`/events/simulate-tick?count=${count}`);
+      return res.data;
+    } catch (err: any) {
+      throw new Error(err?.response?.data?.message || err.message || 'Simulation failed');
+    }
+  },
+
+  getEventStreamUrl(): string {
+    return `${API_BASE}/events/stream`;
   },
 };

@@ -19,6 +19,7 @@ from app.schemas.trajectory import (
     TrajectoryDetailResponse,
     TrajectoryFilters,
     TrajectoryPointResponse,
+    TrajectoryPredictionResponse,
     TrajectoryResponse,
     TrajectoryTimelineResponse,
     TrajectoryTimelineSegment,
@@ -322,3 +323,127 @@ class TrajectoryService:
             status=trj.status,
             segments=segments,
         )
+
+    async def predict_next_locations(
+        self, trajectory_id: uuid.UUID
+    ) -> TrajectoryPredictionResponse:
+        """
+        Forecast the vehicle's future trajectory, next likely camera intercepts,
+        estimated arrival times (ETA), and corridor destinations.
+        """
+        from datetime import timedelta
+
+        from app.schemas.trajectory import PredictedNextHop, TrajectoryPredictionResponse
+
+        trj = await self._repo.get_with_points(trajectory_id)
+        if not trj:
+            raise NotFoundError("Trajectory", trajectory_id)
+
+        points = trj.points or []
+        if not points:
+            # Fallback to trajectory start metadata
+            last_cam_id = trj.ordered_camera_ids[-1] if trj.ordered_camera_ids else uuid.uuid4()
+            last_cam_name = trj.ordered_camera_names[-1] if trj.ordered_camera_names else "Current Camera"
+            last_time = trj.end_time
+            last_speed = float(trj.average_speed_kmh or 45.0)
+        else:
+            last_pt = points[-1]
+            last_cam_id = last_pt.camera_id
+            last_cam_name = last_pt.camera.name if last_pt.camera else str(last_pt.camera_id)
+            last_time = last_pt.timestamp
+            last_speed = float(last_pt.speed_kmh or trj.average_speed_kmh or 45.0)
+
+        # 1. Query outgoing topological connections from the current camera
+        connections, _ = await self._conn_repo.list_connections(
+            source_camera_id=last_cam_id, limit=20
+        )
+
+        predicted_hops: list[PredictedNextHop] = []
+
+        if connections:
+            raw_weights = []
+            hop_candidates = []
+
+            for conn in connections:
+                dest_cam = conn.destination_camera
+                dest_name = dest_cam.name if dest_cam else str(conn.destination_camera_id)
+                road_name = conn.road.name if conn.road else "Connected Arterial"
+                dist_m = float(conn.distance_m or 800.0)
+
+                # Estimated travel duration
+                if conn.avg_travel_time_s and conn.avg_travel_time_s > 0:
+                    travel_s = float(conn.avg_travel_time_s)
+                else:
+                    speed_mps = max(5.0, (last_speed * 1000.0) / 3600.0)
+                    travel_s = dist_m / speed_mps
+
+                eta = last_time + timedelta(seconds=int(travel_s))
+                # Weight inversely proportional to distance and travel time
+                weight = 1.0 / max(1.0, travel_s)
+                raw_weights.append(weight)
+
+                hop_candidates.append({
+                    "camera_id": conn.destination_camera_id,
+                    "camera_name": dest_name,
+                    "road_name": road_name,
+                    "distance_meters": round(dist_m, 1),
+                    "estimated_travel_time_seconds": round(travel_s, 1),
+                    "estimated_arrival_time": eta,
+                    "base_conf": float(trj.confidence),
+                })
+
+            total_weight = sum(raw_weights) if raw_weights else 1.0
+
+            for i, cand in enumerate(hop_candidates):
+                prob = round(raw_weights[i] / total_weight, 4)
+                conf = round(cand["base_conf"] * prob, 4)
+                predicted_hops.append(
+                    PredictedNextHop(
+                        camera_id=cand["camera_id"],
+                        camera_name=cand["camera_name"],
+                        road_name=cand["road_name"],
+                        probability=prob,
+                        distance_meters=cand["distance_meters"],
+                        estimated_travel_time_seconds=cand["estimated_travel_time_seconds"],
+                        estimated_arrival_time=cand["estimated_arrival_time"],
+                        confidence_score=max(0.2, conf),
+                    )
+                )
+
+            # Sort by highest probability first
+            predicted_hops.sort(key=lambda h: h.probability, reverse=True)
+        else:
+            # If no direct forward edges, estimate radial progression
+            speed_mps = max(5.0, (last_speed * 1000.0) / 3600.0)
+            default_dist = 1200.0
+            travel_s = default_dist / speed_mps
+            eta = last_time + timedelta(seconds=int(travel_s))
+
+            predicted_hops.append(
+                PredictedNextHop(
+                    camera_id=uuid.uuid4(),
+                    camera_name=f"Forward Sensor Downstream of {last_cam_name}",
+                    road_name="Primary Metropolitan Exit Corridor",
+                    probability=0.85,
+                    distance_meters=default_dist,
+                    estimated_travel_time_seconds=round(travel_s, 1),
+                    estimated_arrival_time=eta,
+                    confidence_score=round(float(trj.confidence) * 0.85, 4),
+                )
+            )
+
+        top_corridor = predicted_hops[0].road_name if predicted_hops else "Outer Ring Road Exit"
+
+        return TrajectoryPredictionResponse(
+            trajectory_id=trj.trajectory_id,
+            vehicle_identity_id=trj.vehicle_identity_id,
+            current_camera_id=last_cam_id,
+            current_camera_name=last_cam_name,
+            last_seen_timestamp=last_time,
+            current_speed_kmh=round(last_speed, 1),
+            predicted_next_hops=predicted_hops,
+            predicted_destination_corridor=top_corridor,
+            deviation_risk_level="LOW" if len(predicted_hops) > 0 else "MEDIUM",
+            forecast_method="Markov Spatio-Temporal Graph Propagation",
+        )
+

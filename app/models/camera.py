@@ -82,19 +82,23 @@ class Camera(UUIDMixin, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    road: Mapped[Road | None] = relationship("Road", back_populates="cameras")
+    road: Mapped[Road | None] = relationship("Road", back_populates="cameras", lazy="selectin")
 
     outgoing_connections: Mapped[list[CameraConnection]] = relationship(
         "CameraConnection",
         foreign_keys="CameraConnection.source_camera_id",
         back_populates="source_camera",
-        lazy="select",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
     incoming_connections: Mapped[list[CameraConnection]] = relationship(
         "CameraConnection",
         foreign_keys="CameraConnection.destination_camera_id",
         back_populates="destination_camera",
-        lazy="select",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
     )
 
     __table_args__ = (Index("ix_cameras_location", "location", postgresql_using="gist"),)

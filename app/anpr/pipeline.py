@@ -9,7 +9,7 @@ from __future__ import annotations
 from app.anpr.contracts import (
     FrameInput,
 )
-from app.anpr.interfaces import PlateDetector, PlateOCR, VehicleDetector
+from app.anpr.interfaces import PlateDetector, PlateOCR, VehicleDetector, VehicleReIdentifier
 from app.anpr.matcher import propagate_observation_confidence
 from app.anpr.normalizer import OCRNormalizer
 from app.core.logging import get_logger
@@ -31,14 +31,17 @@ class ANPRPipeline:
         vehicle_detector: VehicleDetector,
         plate_detector: PlateDetector,
         plate_ocr: PlateOCR,
+        vehicle_reid: VehicleReIdentifier | None = None,
         normalizer: OCRNormalizer | None = None,
         source_name: str = "anpr-pipeline-v1",
     ) -> None:
         self.vehicle_detector = vehicle_detector
         self.plate_detector = plate_detector
         self.plate_ocr = plate_ocr
+        self.vehicle_reid = vehicle_reid
         self.normalizer = normalizer or OCRNormalizer()
         self.source_name = source_name
+
 
     async def process_frame(
         self,
@@ -74,16 +77,28 @@ class ANPRPipeline:
                     )
                     normalized_plate = norm_result.normalized_text
 
-            # Step 4: Calculate combined confidence
+            # Step 4: Extract Re-ID visual embedding if available
+            embedding_id = None
+            embedding_model = None
+            embedding_vec = None
+            if self.vehicle_reid and v_det.crop_path:
+                try:
+                    embedding_vec = await self.vehicle_reid.extract_embedding(v_det.crop_path)
+                    embedding_id = f"reid_{frame.camera_id}_{idx}"
+                    embedding_model = "mobilenetv3-reid"
+                except Exception as e:
+                    logger.warning("anpr.reid_failed", error=str(e))
+
+            # Step 5: Calculate combined confidence
             eff_confidence = propagate_observation_confidence(
                 detection_confidence=v_det.confidence,
                 plate_confidence=ocr_res.confidence if ocr_res else None,
             )
 
-            # Step 5: Build unique source observation ID
+            # Step 6: Build unique source observation ID
             obs_tag = f"{frame.camera_id}_{frame.observed_at.strftime('%Y%m%d%H%M%S%f')}_{idx}"
 
-            # Step 6: Construct normalized domain payload
+            # Step 7: Construct normalized domain payload
             obs_payload = VehicleObservationCreate(
                 source=self.source_name,
                 source_observation_id=obs_tag,
@@ -103,11 +118,14 @@ class ANPRPipeline:
                 frame_path=frame.frame_path,
                 crop_path=v_det.crop_path,
                 plate_crop_path=plate_det.plate_crop_path if plate_det else None,
+                embedding_id=embedding_id,
+                embedding_model=embedding_model,
                 metadata={
                     "effective_confidence": eff_confidence,
                     "pipeline_source": self.source_name,
                     "ocr_raw_text": ocr_res.raw_text if ocr_res else None,
                     "ocr_model": ocr_res.model_name if ocr_res else None,
+                    "embedding_vector": embedding_vec,
                 },
             )
             observations.append(obs_payload)

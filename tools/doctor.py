@@ -211,6 +211,7 @@ def print_summary(results: list):
     print(f"  {BOLD}Quick Developer Actions:{RESET}")
     print(f"  * Launch Backend API:     {CYAN}.venv\\Scripts\\uvicorn app.main:app --reload{RESET}")
     print(f"  * Launch Frontend UI:     {CYAN}cd frontend && npm run dev{RESET}")
+    print(f"  * Live Real-Time Monitor: {CYAN}python tools/monitor_realtime.py --simulate{RESET}")
     print(f"  * Run Unit Test Suite:    {CYAN}pytest tests/unit/ -v{RESET}")
     print(f"  * Run Live Benchmark:     {CYAN}python tools/run_benchmark.py{RESET}\n")
 

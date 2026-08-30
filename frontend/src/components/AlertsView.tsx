@@ -2,15 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   AlertTriangle,
   ShieldAlert,
-  CheckCircle,
-  XCircle,
-  Eye,
-  Clock,
   MapPin,
   FileText,
-  Filter,
-  Check,
-  X
+  Filter
 } from 'lucide-react';
 import { AlertItem, AlertInvestigationResponse } from '../types/api';
 import { api } from '../services/api';
@@ -95,66 +89,70 @@ export const AlertsView: React.FC = () => {
   });
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[1600px] mx-auto">
+    <div className="p-4 space-y-4 overflow-y-auto h-full max-w-[1600px] mx-auto animate-slide-up">
       {/* Header & Filter Controls */}
-      <div className="bg-[#13131b] border border-[#292932] rounded p-3.5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-rose-400" />
-          <h2 className="font-bold text-sm text-[#e4e1ed]">
-            Security & Anomaly Alert Center
-          </h2>
-          <span className="px-2 py-0.5 rounded bg-[#1f1f27] border border-[#34343d] text-xs font-mono text-[#908fa0]">
-            {filteredAlerts.length} Active Events
-          </span>
+      <div className="apple-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xl">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <ShieldAlert className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-sm text-[#f4f4f5] tracking-tight">
+              Security & Anomaly Alert Center
+            </h2>
+            <span className="text-xs text-[#8e8e93] font-mono">
+              {filteredAlerts.length} Active Events
+            </span>
+          </div>
         </div>
 
         {/* Filter Dropdowns */}
         <div className="flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1.5 font-mono text-[#908fa0]">
-            <Filter className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 font-medium text-[#8e8e93] bg-[#18181f]/80 px-3 py-1.5 rounded-xl border border-white/[0.08]">
+            <Filter className="w-3.5 h-3.5 text-emerald-400" />
             <span>Severity:</span>
             <select
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value)}
-              className="bg-[#0d0d15] border border-[#292932] rounded px-2 py-1 text-xs text-[#e4e1ed] focus:outline-none focus:border-[#8083ff]"
+              className="bg-transparent text-[#f4f4f5] font-semibold text-xs focus:outline-none cursor-pointer pr-1"
             >
-              <option value="all">All Severities</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="moderate">Moderate</option>
-              <option value="low">Low</option>
+              <option value="all" className="bg-[#121215]">All Severities</option>
+              <option value="critical" className="bg-[#121215]">Critical</option>
+              <option value="high" className="bg-[#121215]">High</option>
+              <option value="moderate" className="bg-[#121215]">Moderate</option>
+              <option value="low" className="bg-[#121215]">Low</option>
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5 font-mono text-[#908fa0]">
+          <div className="flex items-center gap-1.5 font-medium text-[#8e8e93] bg-[#18181f]/80 px-3 py-1.5 rounded-xl border border-white/[0.08]">
             <span>Status:</span>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-[#0d0d15] border border-[#292932] rounded px-2 py-1 text-xs text-[#e4e1ed] focus:outline-none focus:border-[#8083ff]"
+              className="bg-transparent text-[#f4f4f5] font-semibold text-xs focus:outline-none cursor-pointer pr-1"
             >
-              <option value="all">All Statuses</option>
-              <option value="NEW">NEW</option>
-              <option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
-              <option value="RESOLVED">RESOLVED</option>
-              <option value="DISMISSED">DISMISSED</option>
+              <option value="all" className="bg-[#121215]">All Statuses</option>
+              <option value="NEW" className="bg-[#121215]">NEW</option>
+              <option value="ACKNOWLEDGED" className="bg-[#121215]">ACKNOWLEDGED</option>
+              <option value="RESOLVED" className="bg-[#121215]">RESOLVED</option>
+              <option value="DISMISSED" className="bg-[#121215]">DISMISSED</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Main Alert Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
         {/* Left 7 Cols: Alert Table List */}
-        <div className="lg:col-span-7 bg-[#13131b] border border-[#292932] rounded overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-[#292932] flex items-center justify-between text-xs font-mono text-[#908fa0] uppercase tracking-wider font-semibold">
+        <div className="lg:col-span-7 apple-card rounded-2xl overflow-hidden flex flex-col shadow-xl">
+          <div className="p-3.5 border-b border-white/[0.08] flex items-center justify-between text-xs font-semibold text-[#8e8e93] uppercase tracking-wider">
             <span>ALERT INCIDENTS</span>
             <span>STATUS / ACTION</span>
           </div>
 
-          <div className="divide-y divide-[#1f1f27] overflow-y-auto">
+          <div className="divide-y divide-white/[0.06] overflow-y-auto">
             {filteredAlerts.length === 0 ? (
-              <div className="p-8 text-center text-[#908fa0] text-xs font-mono">
+              <div className="p-8 text-center text-[#8e8e93] text-xs font-mono">
                 No alerts matching current filters.
               </div>
             ) : (
@@ -162,18 +160,18 @@ export const AlertsView: React.FC = () => {
                 <div
                   key={alert.id}
                   onClick={() => handleInspect(alert.id)}
-                  className={`p-3.5 flex items-start justify-between gap-3 cursor-pointer transition-colors hover:bg-[#1b1b23] ${
-                    selectedAlert?.alert_id === alert.id ? 'bg-[#1b1b23] border-l-2 border-[#8083ff]' : ''
+                  className={`p-4 flex items-start justify-between gap-3 cursor-pointer transition-all duration-200 hover:bg-white/[0.04] ${
+                    selectedAlert?.alert_id === alert.id ? 'bg-white/[0.06] border-l-2 border-emerald-500' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className={`p-1.5 rounded shrink-0 mt-0.5 ${
+                      className={`p-2 rounded-xl shrink-0 mt-0.5 ${
                         alert.severity === 'critical'
-                          ? 'bg-rose-950/60 text-rose-400 border border-rose-500/40'
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
                           : alert.severity === 'high'
-                          ? 'bg-amber-950/60 text-amber-400 border border-amber-500/40'
-                          : 'bg-[#8083ff]/10 text-[#c0c1ff] border border-[#8083ff]/30'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                          : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
                       }`}
                     >
                       <AlertTriangle className="w-4 h-4" />
@@ -181,32 +179,32 @@ export const AlertsView: React.FC = () => {
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-[#c0c1ff]">
+                        <span className="text-xs font-mono font-bold text-emerald-400">
                           {alert.alert_code}
                         </span>
                         <span
-                          className={`text-[10px] font-mono font-bold uppercase px-1.5 py-0.2 rounded ${
+                          className={`text-[10px] font-bold uppercase px-2 py-0.2 rounded-full ${
                             alert.severity === 'critical'
-                              ? 'bg-rose-950/50 text-rose-400'
-                              : 'bg-amber-950/50 text-amber-400'
+                              ? 'bg-rose-500/20 text-rose-300'
+                              : 'bg-amber-500/20 text-amber-300'
                           }`}
                         >
                           {alert.severity}
                         </span>
-                        <span className="text-[10px] font-mono text-[#908fa0]">
+                        <span className="text-[11px] font-mono text-[#8e8e93]">
                           Conf: {(alert.confidence * 100).toFixed(1)}%
                         </span>
                       </div>
 
-                      <h4 className="text-xs font-semibold text-[#e4e1ed] mt-1">{alert.title}</h4>
-                      <p className="text-[11px] text-[#908fa0] mt-0.5 line-clamp-2">
+                      <h4 className="text-xs font-semibold text-[#f4f4f5] mt-1 tracking-tight">{alert.title}</h4>
+                      <p className="text-xs text-[#a1a1aa] mt-0.5 line-clamp-2">
                         {alert.description}
                       </p>
 
-                      <div className="flex items-center gap-4 mt-2 text-[10px] font-mono text-[#908fa0]">
+                      <div className="flex items-center gap-4 mt-2 text-xs font-mono text-[#8e8e93]">
                         <span>Camera: {alert.camera_name || 'Network'}</span>
                         {alert.canonical_plate && (
-                          <span className="text-[#38bdf8] font-bold">
+                          <span className="text-cyan-400 font-bold">
                             Plate: {alert.canonical_plate}
                           </span>
                         )}
@@ -218,27 +216,27 @@ export const AlertsView: React.FC = () => {
                   {/* Status Badge & Actions */}
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span
-                      className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase ${
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
                         alert.status === 'NEW'
-                          ? 'bg-rose-950 text-rose-400 border border-rose-500/30 animate-pulse'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse'
                           : alert.status === 'ACKNOWLEDGED'
-                          ? 'bg-amber-950 text-amber-400 border border-amber-500/30'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                           : alert.status === 'RESOLVED'
-                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-[#1f1f27] text-[#908fa0]'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : 'bg-white/[0.06] text-[#8e8e93]'
                       }`}
                     >
                       {alert.status}
                     </span>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       {alert.status === 'NEW' && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAcknowledge(alert.id);
                           }}
-                          className="px-2 py-1 rounded bg-[#1f1f27] hover:bg-[#292932] text-xs font-mono text-[#c0c1ff] border border-[#34343d] transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-xs font-medium text-cyan-300 border border-white/[0.1] transition-all cursor-pointer active:scale-95"
                         >
                           Ack
                         </button>
@@ -249,7 +247,7 @@ export const AlertsView: React.FC = () => {
                             e.stopPropagation();
                             handleOpenResolve(alert.id);
                           }}
-                          className="px-2 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-xs font-mono text-emerald-400 border border-emerald-500/40 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-medium text-emerald-300 border border-emerald-500/40 transition-all cursor-pointer active:scale-95"
                         >
                           Resolve
                         </button>
@@ -263,39 +261,39 @@ export const AlertsView: React.FC = () => {
         </div>
 
         {/* Right 5 Cols: Forensic Explainability Dossier */}
-        <div className="lg:col-span-5 bg-[#13131b] border border-[#292932] rounded p-4 flex flex-col justify-between">
+        <div className="lg:col-span-5 apple-card rounded-2xl p-5 flex flex-col justify-between shadow-xl">
           {selectedAlert ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#292932]">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#c0c1ff]" />
-                  <h3 className="font-semibold text-sm text-[#e4e1ed]">
-                    Forensic Explainability Case File
+                  <FileText className="w-4 h-4 text-emerald-400" />
+                  <h3 className="font-semibold text-sm text-[#f4f4f5] tracking-tight">
+                    Forensic Case File
                   </h3>
                 </div>
-                <span className="font-mono text-xs text-[#38bdf8] font-bold">
+                <span className="font-mono text-xs text-cyan-400 font-bold">
                   {selectedAlert.alert_code}
                 </span>
               </div>
 
               {/* Title & Description */}
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-[#e4e1ed]">{selectedAlert.title}</h4>
-                <p className="text-xs text-[#c7c4d7] leading-relaxed">
+                <h4 className="text-sm font-semibold text-[#f4f4f5]">{selectedAlert.title}</h4>
+                <p className="text-xs text-[#a1a1aa] leading-relaxed">
                   {selectedAlert.description}
                 </p>
               </div>
 
               {/* Structured Evidence Card */}
-              <div className="bg-[#1b1b23] border border-[#292932] rounded p-3 space-y-2">
-                <span className="text-[10px] font-mono text-[#908fa0] uppercase tracking-wider font-semibold block">
+              <div className="apple-subcard rounded-2xl p-3.5 space-y-2">
+                <span className="text-[10px] font-semibold text-[#8e8e93] uppercase tracking-wider block">
                   STRUCTURED EVIDENCE BREAKDOWN
                 </span>
                 <div className="space-y-1.5 text-xs font-mono">
                   {Object.entries(selectedAlert.evidence || {}).map(([key, val]) => (
-                    <div key={key} className="flex justify-between py-1 border-b border-[#292932]/50">
-                      <span className="text-[#908fa0] capitalize">{key.replace(/_/g, ' ')}:</span>
-                      <span className="text-[#e4e1ed] font-semibold">
+                    <div key={key} className="flex justify-between py-1 border-b border-white/[0.04]">
+                      <span className="text-[#8e8e93] capitalize">{key.replace(/_/g, ' ')}:</span>
+                      <span className="text-[#f4f4f5] font-semibold">
                         {typeof val === 'number' ? val.toString() : String(val)}
                       </span>
                     </div>
@@ -305,20 +303,20 @@ export const AlertsView: React.FC = () => {
 
               {/* Cameras Involved */}
               <div className="space-y-2">
-                <span className="text-[10px] font-mono text-[#908fa0] uppercase tracking-wider font-semibold block">
+                <span className="text-[10px] font-semibold text-[#8e8e93] uppercase tracking-wider block">
                   CAMERAS INVOLVED IN ANOMALY
                 </span>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {selectedAlert.cameras_involved.map((cam) => (
                     <div
                       key={cam.id}
-                      className="bg-[#1b1b23] p-2.5 rounded border border-[#292932] flex items-center justify-between text-xs font-mono"
+                      className="apple-subcard p-2.5 rounded-xl flex items-center justify-between text-xs font-mono"
                     >
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-[#38bdf8]" />
-                        <span className="text-[#e4e1ed] font-semibold">{cam.name}</span>
+                        <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="text-[#f4f4f5] font-semibold">{cam.name}</span>
                       </div>
-                      <span className="text-[#908fa0]">Heading: {cam.direction || 'N/A'}</span>
+                      <span className="text-[#8e8e93]">Heading: {cam.direction || 'N/A'}</span>
                     </div>
                   ))}
                 </div>
@@ -326,18 +324,18 @@ export const AlertsView: React.FC = () => {
 
               {/* Resolution Notes if Resolved */}
               {selectedAlert.resolution_notes && (
-                <div className="p-3 rounded bg-emerald-950/30 border border-emerald-500/30 text-xs font-mono space-y-1">
-                  <span className="text-emerald-400 font-bold block">OPERATOR RESOLUTION NOTES:</span>
-                  <p className="text-[#e4e1ed]">{selectedAlert.resolution_notes}</p>
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-mono space-y-1">
+                  <span className="text-emerald-400 font-bold block">OPERATOR RESOLUTION:</span>
+                  <p className="text-[#f4f4f5]">{selectedAlert.resolution_notes}</p>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-3 border-t border-[#292932]">
+              <div className="flex items-center gap-2 pt-3 border-t border-white/[0.08]">
                 {selectedAlert.status === 'NEW' && (
                   <button
                     onClick={() => handleAcknowledge(selectedAlert.alert_id)}
-                    className="flex-1 py-2 rounded bg-[#8083ff] hover:bg-[#8083ff]/90 text-[#0d0096] font-bold text-xs font-mono cursor-pointer transition-colors"
+                    className="flex-1 py-2 rounded-xl apple-button-primary text-xs font-semibold cursor-pointer"
                   >
                     Acknowledge Alert
                   </button>
@@ -345,7 +343,7 @@ export const AlertsView: React.FC = () => {
                 {selectedAlert.status !== 'RESOLVED' && (
                   <button
                     onClick={() => handleOpenResolve(selectedAlert.alert_id)}
-                    className="flex-1 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono cursor-pointer transition-colors"
+                    className="flex-1 py-2 rounded-xl apple-button-primary text-xs font-semibold cursor-pointer"
                   >
                     Resolve Incident
                   </button>
@@ -353,17 +351,17 @@ export const AlertsView: React.FC = () => {
                 {selectedAlert.status !== 'DISMISSED' && (
                   <button
                     onClick={() => handleDismiss(selectedAlert.alert_id)}
-                    className="px-3 py-2 rounded bg-[#1f1f27] hover:bg-[#292932] text-[#ffb4ab] text-xs font-mono cursor-pointer transition-colors"
+                    className="px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-rose-400 border border-white/[0.08] text-xs font-semibold cursor-pointer transition-all active:scale-95"
                   >
-                    Dismiss False Positive
+                    Dismiss
                   </button>
                 )}
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-[#908fa0] text-center p-8 space-y-2">
-              <ShieldAlert className="w-8 h-8 text-[#464554]" />
-              <p className="text-xs font-mono">
+            <div className="flex flex-col items-center justify-center h-full text-[#8e8e93] text-center p-8 space-y-2">
+              <ShieldAlert className="w-8 h-8 text-[#3f3f46]" />
+              <p className="text-xs">
                 Select an alert incident from the left to view complete explainability evidence and involved camera trajectories.
               </p>
             </div>
@@ -373,20 +371,20 @@ export const AlertsView: React.FC = () => {
 
       {/* Operator Resolution Notes Modal */}
       {resolveModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[2000] p-4">
-          <div className="bg-[#13131b] border border-[#292932] rounded w-full max-w-md p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#292932]">
-              <h3 className="font-bold text-sm text-[#e4e1ed]">Resolve Incident Case</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[2000] p-4 animate-fade-in">
+          <div className="apple-glass rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl border border-white/[0.15] animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <h3 className="font-semibold text-sm text-[#f4f4f5]">Resolve Incident Case</h3>
               <button
                 onClick={() => setResolveModalOpen(false)}
-                className="text-[#908fa0] hover:text-[#e4e1ed] cursor-pointer"
+                className="w-6 h-6 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-[#8e8e93] hover:text-[#f4f4f5] flex items-center justify-center cursor-pointer text-xs"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-mono text-[#908fa0] block">
+              <label className="text-xs text-[#8e8e93] block">
                 Operator Resolution Notes (Required for Audit Trail):
               </label>
               <textarea
@@ -394,21 +392,21 @@ export const AlertsView: React.FC = () => {
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
                 placeholder="e.g., Patrol unit intercepted vehicle at Brigade Road intersection. Stolen vehicle secured..."
-                className="w-full bg-[#0d0d15] border border-[#292932] rounded p-2.5 text-xs text-[#e4e1ed] placeholder-[#908fa0] focus:outline-none focus:border-[#8083ff] font-mono"
+                className="w-full bg-[#18181f]/80 border border-white/[0.1] rounded-xl p-3 text-xs text-[#f4f4f5] placeholder-[#71717a] focus:outline-none focus:border-emerald-500 font-mono shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 onClick={() => setResolveModalOpen(false)}
-                className="px-3 py-1.5 rounded bg-[#1f1f27] text-xs font-mono text-[#e4e1ed] cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-xs font-semibold text-[#f4f4f5] cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmResolve}
                 disabled={!resolutionNotes.trim()}
-                className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-mono font-bold cursor-pointer transition-colors"
+                className="px-4 py-2 rounded-xl apple-button-primary disabled:opacity-50 text-xs font-semibold cursor-pointer"
               >
                 Confirm Resolution
               </button>
