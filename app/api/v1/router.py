@@ -17,6 +17,7 @@ from app.api.v1 import (
     blacklist,
     camera_connections,
     cameras,
+    dashboard,
     evaluation,
     events,
     health,
@@ -65,3 +66,6 @@ router.include_router(events.router)
 
 # Phase 11 — Evaluation and benchmarking
 router.include_router(evaluation.router)
+
+# Phase 12 — Command center dashboard read APIs
+router.include_router(dashboard.router)
