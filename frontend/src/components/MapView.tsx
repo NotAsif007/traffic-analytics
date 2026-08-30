@@ -114,10 +114,16 @@ export const MapView: React.FC<MapViewProps> = ({ data, onSelectVehicle }) => {
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}
         >
-          {/* CartoDB Dark Matter Tile Layer */}
+          {/* Esri World Dark Gray Base Tile Layer (No watermark, dark command-center theme) */}
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; OpenStreetMap'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={16}
+          />
+          <TileLayer
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={16}
           />
 
           {/* Road Network Lines */}
