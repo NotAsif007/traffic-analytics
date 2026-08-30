@@ -5,7 +5,6 @@ from __future__ import annotations
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Optional
 
 from app.schemas.vehicle_observation import VehicleObservationCreate
 from app.tracking.contracts import TrackState
@@ -26,7 +25,7 @@ class SingleCameraTracker(ABC):
         camera_id: uuid.UUID,
         timestamp: datetime,
         detections: list[VehicleObservationCreate],
-        frame_number: Optional[int] = None,
+        frame_number: int | None = None,
     ) -> list[TrackState]:
         """
         Update the tracker with detections from the current frame.
@@ -55,6 +54,6 @@ class SingleCameraTracker(ABC):
         pass
 
     @abstractmethod
-    def reset(self, camera_id: Optional[uuid.UUID] = None) -> None:
+    def reset(self, camera_id: uuid.UUID | None = None) -> None:
         """Reset internal tracking state (for a specific camera or all)."""
         pass

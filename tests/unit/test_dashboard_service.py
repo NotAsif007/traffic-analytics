@@ -11,14 +11,12 @@ import pytest
 from app.models.alert import Alert
 from app.models.camera import Camera
 from app.models.road import Road
-from app.models.trajectory import Trajectory
 from app.models.vehicle_identity import VehicleIdentity
 from app.models.vehicle_observation import VehicleObservation
-from app.schemas.analytics import CongestionReportResponse, TrafficVolumeResponse
+from app.schemas.analytics import CongestionReportResponse
 from app.schemas.dashboard import (
     AlertInvestigationResponse,
     CityOverviewResponse,
-    DashboardAnalyticsSummaryResponse,
     LiveMapResponse,
     VehicleInvestigationResponse,
 )
@@ -95,7 +93,10 @@ async def test_get_live_map(dashboard_service: DashboardService) -> None:
     road1.id = uuid.uuid4()
     road1.name = "MG Road"
     road1.geometry = MagicMock()
-    road1.geometry.model_dump.return_value = {"type": "LineString", "coordinates": [[77.59, 12.97], [77.60, 12.98]]}
+    road1.geometry.model_dump.return_value = {
+        "type": "LineString",
+        "coordinates": [[77.59, 12.97], [77.60, 12.98]],
+    }
 
     mock_cams_res = MagicMock()
     mock_cams_res.scalars().all.return_value = [cam1]

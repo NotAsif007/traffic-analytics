@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from app.anpr.contracts import (
     FrameInput,
     OCRResult,
@@ -24,7 +22,7 @@ class MockVehicleDetector(VehicleDetector):
         default_class: str = "car",
         default_confidence: float = 0.95,
         default_color: str = "white",
-        default_bbox: Optional[BoundingBox] = None,
+        default_bbox: BoundingBox | None = None,
         return_empty: bool = False,
     ) -> None:
         self.default_class = default_class
@@ -60,7 +58,7 @@ class MockPlateDetector(PlateDetector):
     def __init__(
         self,
         default_confidence: float = 0.92,
-        default_bbox: Optional[BoundingBox] = None,
+        default_bbox: BoundingBox | None = None,
         default_region: str = "IN",
         return_none: bool = False,
     ) -> None:
@@ -73,7 +71,7 @@ class MockPlateDetector(PlateDetector):
         self,
         frame: FrameInput,
         vehicle_detection: VehicleDetectionResult,
-    ) -> Optional[PlateDetectionResult]:
+    ) -> PlateDetectionResult | None:
         if self.return_none:
             return None
 
@@ -95,7 +93,7 @@ class MockPlateOCR(PlateOCR):
         self,
         default_text: str = "AS01AB1234",
         default_confidence: float = 0.94,
-        char_confidences: Optional[list[float]] = None,
+        char_confidences: list[float] | None = None,
         return_none: bool = False,
     ) -> None:
         self.default_text = default_text
@@ -106,7 +104,7 @@ class MockPlateOCR(PlateOCR):
     async def recognize_plate(
         self,
         plate_detection: PlateDetectionResult,
-    ) -> Optional[OCRResult]:
+    ) -> OCRResult | None:
         if self.return_none:
             return None
 

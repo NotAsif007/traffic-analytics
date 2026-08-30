@@ -85,9 +85,7 @@ async def test_create_camera_with_location(client: AsyncClient) -> None:
 async def test_duplicate_camera_id_conflict(client: AsyncClient) -> None:
     """POST /cameras with duplicate camera_id returns 409."""
     await client.post("/api/v1/cameras/", json={"camera_id": "CAM-DUP", "name": "First"})
-    r = await client.post(
-        "/api/v1/cameras/", json={"camera_id": "CAM-DUP", "name": "Second"}
-    )
+    r = await client.post("/api/v1/cameras/", json={"camera_id": "CAM-DUP", "name": "Second"})
     assert r.status_code == 409
 
 

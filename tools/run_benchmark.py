@@ -8,7 +8,6 @@ Usage:
 """
 
 import argparse
-import json
 import sys
 
 from app.evaluation.runner import BenchmarkRunner
@@ -34,12 +33,14 @@ def main() -> int:
     print(f"PS 26127 TRAFFIC INTELLIGENCE BENCHMARK REPORT: {report.benchmark_name}")
     print("=" * 70)
     print(f"Evaluation Timestamp: {report.evaluation_timestamp.isoformat()}")
-    print(f"Dataset: {report.dataset_summary['total_cameras']} cameras, "
-          f"{report.dataset_summary['total_vehicles']} vehicles, "
-          f"{report.dataset_summary['total_observations']} observations, "
-          f"{report.dataset_summary['total_anomalous_events']} anomalies")
+    print(
+        f"Dataset: {report.dataset_summary['total_cameras']} cameras, "
+        f"{report.dataset_summary['total_vehicles']} vehicles, "
+        f"{report.dataset_summary['total_observations']} observations, "
+        f"{report.dataset_summary['total_anomalous_events']} anomalies"
+    )
     print("-" * 70)
-    print(f"1. ANPR LAYER:")
+    print("1. ANPR LAYER:")
     print(f"   - Detection Precision:  {report.anpr.detection_precision:.2%}")
     print(f"   - Detection Recall:     {report.anpr.detection_recall:.2%}")
     print(f"   - Detection F1:         {report.anpr.detection_f1:.2%}")
@@ -48,19 +49,19 @@ def main() -> int:
     print(f"   - Character Accuracy:   {report.anpr.average_character_accuracy:.2%}")
     print(f"   - Mean OCR Confidence:  {report.anpr.mean_ocr_confidence:.2%}")
     print("-" * 70)
-    print(f"2. TRACKING LAYER:")
+    print("2. TRACKING LAYER:")
     print(f"   - MOTA:                 {report.tracking.mota:.2%}")
     print(f"   - IDF1:                 {report.tracking.idf1:.2%}")
     print(f"   - ID Switches:          {report.tracking.id_switches}")
     print(f"   - Mostly Tracked:       {report.tracking.mostly_tracked_tracks}")
     print("-" * 70)
-    print(f"3. CROSS-CAMERA ASSOCIATION LAYER:")
+    print("3. CROSS-CAMERA ASSOCIATION LAYER:")
     print(f"   - Association Precision:{report.association.precision:.2%}")
     print(f"   - Association Recall:   {report.association.recall:.2%}")
     print(f"   - Association F1:       {report.association.f1_score:.2%}")
     print(f"   - Trajectory Complete:  {report.association.trajectory_completeness_rate:.2%}")
     print("-" * 70)
-    print(f"4. ALERT & ANOMALY ENGINE:")
+    print("4. ALERT & ANOMALY ENGINE:")
     print(f"   - Alert Precision:      {report.alerts.precision:.2%}")
     print(f"   - Alert Recall:         {report.alerts.recall:.2%}")
     print(f"   - Alert F1:             {report.alerts.f1_score:.2%}")

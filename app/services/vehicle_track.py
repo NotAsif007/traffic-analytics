@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +19,6 @@ from app.schemas.vehicle_track import (
     VehicleTrackCreate,
     VehicleTrackDetailResponse,
     VehicleTrackResponse,
-    VehicleTrackUpdate,
 )
 from app.tracking.contracts import TrackState
 
@@ -39,7 +37,9 @@ def _track_to_response(track: VehicleTrack) -> VehicleTrackResponse:
         vehicle_class=track.vehicle_class,
         vehicle_color=track.vehicle_color,
         best_plate_text=track.best_plate_text,
-        best_plate_confidence=float(track.best_plate_confidence) if track.best_plate_confidence else None,
+        best_plate_confidence=float(track.best_plate_confidence)
+        if track.best_plate_confidence
+        else None,
         points_count=track.points_count,
         notes=track.notes,
         metadata=track.metadata_,
@@ -137,7 +137,7 @@ class VehicleTrackService:
         self,
         camera_id: uuid.UUID,
         *,
-        status: Optional[str] = None,
+        status: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[VehicleTrackResponse]:
@@ -148,9 +148,7 @@ class VehicleTrackService:
         filters = TrackFilters(camera_id=camera_id, status=status)
         return await self.list_tracks(filters=filters, page=page, page_size=page_size)
 
-    async def get_track_observations(
-        self, track_id: uuid.UUID
-    ) -> list[TrackPointResponse]:
+    async def get_track_observations(self, track_id: uuid.UUID) -> list[TrackPointResponse]:
         track = await self._repo.get_by_id(track_id)
         if not track:
             raise NotFoundError("VehicleTrack", track_id)

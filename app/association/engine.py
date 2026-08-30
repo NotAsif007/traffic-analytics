@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from app.association.contracts import (
     AssociationDecision,
     MatchSignalScores,
@@ -24,10 +22,10 @@ class AssociationEngine:
 
     def __init__(
         self,
-        scorer: Optional[AssociationScorer] = None,
-        gating: Optional[CandidateGating] = None,
-        thresholds: Optional[ScoringThresholds] = None,
-        weights: Optional[ScoringWeights] = None,
+        scorer: AssociationScorer | None = None,
+        gating: CandidateGating | None = None,
+        thresholds: ScoringThresholds | None = None,
+        weights: ScoringWeights | None = None,
     ) -> None:
         self.scorer = scorer or AssociationScorer(weights=weights)
         self.gating = gating or CandidateGating()
@@ -38,7 +36,7 @@ class AssociationEngine:
         self,
         source: SightingContext,
         target: SightingContext,
-        connection: Optional[CameraConnection] = None,
+        connection: CameraConnection | None = None,
     ) -> AssociationDecision:
         """
         Evaluate candidate association between a prior sighting and a new sighting.
@@ -104,7 +102,7 @@ class AssociationEngine:
         score: float,
         status: str,
         delta_seconds: float,
-        connection: Optional[CameraConnection],
+        connection: CameraConnection | None,
     ) -> str:
         """Construct human-readable explainability narrative."""
         parts: list[str] = []
@@ -128,7 +126,9 @@ class AssociationEngine:
                 f"(neutral plate weight: {signals.plate_similarity:.2f})."
             )
         else:
-            parts.append("License plates unreadable on both sightings; association relies on temporal/appearance signals.")
+            parts.append(
+                "License plates unreadable on both sightings; association relies on temporal/appearance signals."
+            )
 
         # Temporal & route analysis
         time_str = f"{delta_seconds:.0f}s"
@@ -149,10 +149,15 @@ class AssociationEngine:
             if source.vehicle_class == target.vehicle_class:
                 parts.append(f"Vehicle class matched ('{source.vehicle_class}').")
             else:
-                parts.append(f"Vehicle class variation: '{source.vehicle_class}' vs '{target.vehicle_class}'.")
+                parts.append(
+                    f"Vehicle class variation: '{source.vehicle_class}' vs '{target.vehicle_class}'."
+                )
 
-        if source.vehicle_color and target.vehicle_color:
-            if source.vehicle_color == target.vehicle_color:
-                parts.append(f"Color matched ('{source.vehicle_color}').")
+        if (
+            source.vehicle_color
+            and target.vehicle_color
+            and source.vehicle_color == target.vehicle_color
+        ):
+            parts.append(f"Color matched ('{source.vehicle_color}').")
 
         return " ".join(parts)

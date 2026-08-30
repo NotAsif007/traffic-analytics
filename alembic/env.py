@@ -30,10 +30,9 @@ if str(PROJECT_ROOT) not in sys.path:
 # ---------------------------------------------------------------------------
 # Every model module must be imported here so Alembic can see the tables.
 # Import the Base AFTER models so the metadata is populated.
-from app.db.base import Base  # noqa: E402
-
 # Import all model modules to populate Base.metadata
 import app.models  # noqa: E402, F401 — registers Road, Camera, CameraConnection
+from app.db.base import Base  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Alembic Config
@@ -46,6 +45,7 @@ if config.config_file_name is not None:
 
 # Use our declarative base's metadata for autogenerate
 target_metadata = Base.metadata
+
 
 # ---------------------------------------------------------------------------
 # Read DSN from environment (never from alembic.ini)

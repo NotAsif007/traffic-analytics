@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     CheckConstraint,
@@ -41,8 +41,10 @@ class VehicleTrack(UUIDMixin, TimestampMixin, Base):
 
     # Human or tracker-assigned local identifier within this camera (e.g. "TRK-001", "102")
     track_id: Mapped[str] = mapped_column(
-        String(64), nullable=False, index=True,
-        comment="Local tracker identifier assigned by the single-camera tracking algorithm"
+        String(64),
+        nullable=False,
+        index=True,
+        comment="Local tracker identifier assigned by the single-camera tracking algorithm",
     )
 
     camera_id: Mapped[uuid.UUID] = mapped_column(
@@ -82,28 +84,29 @@ class VehicleTrack(UUIDMixin, TimestampMixin, Base):
     )
 
     vehicle_class: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, index=True,
-        comment="Consolidated vehicle classification (e.g. car, truck, motorcycle)"
+        String(64),
+        nullable=True,
+        index=True,
+        comment="Consolidated vehicle classification (e.g. car, truck, motorcycle)",
     )
 
     vehicle_color: Mapped[str | None] = mapped_column(
-        String(32), nullable=True,
-        comment="Consolidated dominant color"
+        String(32), nullable=True, comment="Consolidated dominant color"
     )
 
     best_plate_text: Mapped[str | None] = mapped_column(
-        String(20), nullable=True, index=True,
-        comment="Highest confidence OCR plate text reading observed along the track"
+        String(20),
+        nullable=True,
+        index=True,
+        comment="Highest confidence OCR plate text reading observed along the track",
     )
 
     best_plate_confidence: Mapped[float | None] = mapped_column(
-        Numeric(5, 4), nullable=True,
-        comment="OCR confidence associated with best_plate_text"
+        Numeric(5, 4), nullable=True, comment="OCR confidence associated with best_plate_text"
     )
 
     points_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0,
-        comment="Total number of track points in this track"
+        Integer, nullable=False, default=0, comment="Total number of track points in this track"
     )
 
     # Free-form tracker metadata (e.g. velocity vector, Kalman filter state, tracker name)
@@ -191,8 +194,7 @@ class TrackPoint(UUIDMixin, TimestampMixin, Base):
 
     # Bounding box in normalised coordinates {x1, y1, x2, y2}
     bounding_box: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True,
-        comment="Vehicle bounding box {x1,y1,x2,y2} in image coordinates"
+        JSONB, nullable=True, comment="Vehicle bounding box {x1,y1,x2,y2} in image coordinates"
     )
 
     confidence: Mapped[float] = mapped_column(
@@ -202,9 +204,7 @@ class TrackPoint(UUIDMixin, TimestampMixin, Base):
         comment="Detection confidence score for this point",
     )
 
-    estimated_speed_kmh: Mapped[float | None] = mapped_column(
-        Numeric(6, 2), nullable=True
-    )
+    estimated_speed_kmh: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
 
     plate_text: Mapped[str | None] = mapped_column(String(20), nullable=True)
     plate_confidence: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
@@ -213,7 +213,9 @@ class TrackPoint(UUIDMixin, TimestampMixin, Base):
 
     # Relationships
     track: Mapped[VehicleTrack] = relationship("VehicleTrack", back_populates="track_points")
-    observation: Mapped[VehicleObservation | None] = relationship("VehicleObservation", lazy="select")
+    observation: Mapped[VehicleObservation | None] = relationship(
+        "VehicleObservation", lazy="select"
+    )
 
     __table_args__ = (
         CheckConstraint(

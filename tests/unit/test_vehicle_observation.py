@@ -23,7 +23,6 @@ from app.schemas.vehicle_observation import (
 )
 from app.services.vehicle_observation import VehicleObservationService
 
-
 # ---------------------------------------------------------------------------
 # Test fixtures
 # ---------------------------------------------------------------------------
@@ -36,12 +35,12 @@ def _utcnow() -> datetime:
 
 
 def _make_payload(**kwargs) -> VehicleObservationCreate:
-    defaults = dict(
-        source="yolov8-test",
-        source_observation_id="obs-001",
-        camera_id=CAMERA_ID,
-        observed_at=_utcnow(),
-    )
+    defaults = {
+        "source": "yolov8-test",
+        "source_observation_id": "obs-001",
+        "camera_id": CAMERA_ID,
+        "observed_at": _utcnow(),
+    }
     defaults.update(kwargs)
     return VehicleObservationCreate(**defaults)
 
@@ -103,6 +102,7 @@ def sample_camera() -> MagicMock:
 # ---------------------------------------------------------------------------
 # Schema validation tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_bounding_box_valid() -> None:
@@ -193,6 +193,7 @@ def test_status_update_rejects_unknown_status() -> None:
 # Service tests
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 async def test_create_observation_success(
     obs_service: VehicleObservationService,
@@ -260,9 +261,8 @@ async def test_list_observations_pagination(
     sample_obs: MagicMock,
 ) -> None:
     from app.schemas.vehicle_observation import ObservationFilters
-    with patch.object(
-        obs_service._repo, "list_observations", return_value=([sample_obs], 1)
-    ):
+
+    with patch.object(obs_service._repo, "list_observations", return_value=([sample_obs], 1)):
         result = await obs_service.list_observations(
             filters=ObservationFilters(), page=1, page_size=10
         )
@@ -280,9 +280,7 @@ async def test_bulk_ingest_mixed_results(
     valid_payload = _make_payload(source_observation_id="valid-1")
     dup_payload = _make_payload(source_observation_id="dup-1")
     batch_dup_payload = _make_payload(source_observation_id="valid-1")  # duplicate of first
-    bad_cam_payload = _make_payload(
-        camera_id=uuid.uuid4(), source_observation_id="bad-cam-1"
-    )
+    bad_cam_payload = _make_payload(camera_id=uuid.uuid4(), source_observation_id="bad-cam-1")
 
     request = BulkObservationRequest(
         observations=[valid_payload, dup_payload, batch_dup_payload, bad_cam_payload]
@@ -313,4 +311,3 @@ async def test_bulk_ingest_mixed_results(
     assert "Duplicate within this batch" in rejected_reasons["valid-1"]
     assert "bad-cam-1" in rejected_reasons
     assert "not found" in rejected_reasons["bad-cam-1"]
-

@@ -12,8 +12,9 @@ They verify:
 Marked as `unit` — run without any infrastructure.
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.config import Settings
 from app.schemas.health import HealthResponse
@@ -73,9 +74,7 @@ async def test_health_unavailable_when_db_raises(
 ) -> None:
     """When the database raises an exception, component status should be 'unavailable'."""
     # Arrange: session.execute() raises a connection error
-    mock_session.execute = AsyncMock(
-        side_effect=Exception("could not connect to server")
-    )
+    mock_session.execute = AsyncMock(side_effect=Exception("could not connect to server"))
 
     service = HealthService(session=mock_session, settings=test_settings)
 

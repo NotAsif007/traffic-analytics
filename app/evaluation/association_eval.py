@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Sequence
+from collections.abc import Sequence
 
 from app.association.contracts import SightingContext
 from app.association.engine import AssociationEngine
@@ -97,7 +97,9 @@ class AssociationEvaluator:
             if decision.is_accepted:
                 false_associations_fp += 1
 
-        precision = correct_associations_tp / max(1, correct_associations_tp + false_associations_fp)
+        precision = correct_associations_tp / max(
+            1, correct_associations_tp + false_associations_fp
+        )
         recall = correct_associations_tp / max(1, correct_associations_tp + missed_associations_fn)
         f1 = (
             2 * (precision * recall) / max(1e-6, precision + recall)

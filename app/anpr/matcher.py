@@ -6,22 +6,21 @@ cross-camera vehicle identities.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import Field
 
 from app.anpr.normalizer import OCRNormalizer
 from app.schemas.common import AppBaseModel
 
-
 # ---------------------------------------------------------------------------
 # Similarity Results
 # ---------------------------------------------------------------------------
+
 
 class PlateMatchResult(AppBaseModel):
     """
     Detailed outcome of comparing two license plate strings.
     """
+
     plate_a: str
     plate_b: str
     is_exact_match: bool
@@ -34,12 +33,13 @@ class PlateMatchResult(AppBaseModel):
     match_type: str = Field(
         ..., description="exact | normalized | high_similarity | partial | mismatch"
     )
-    details: Optional[str] = None
+    details: str | None = None
 
 
 # ---------------------------------------------------------------------------
 # Comparison Functions
 # ---------------------------------------------------------------------------
+
 
 def levenshtein_distance(s1: str, s2: str) -> int:
     """Compute the minimum edit distance between two strings."""
@@ -88,8 +88,8 @@ def is_partial_match(s1: str, s2: str, min_overlap: int = 4) -> bool:
 
 
 def propagate_observation_confidence(
-    detection_confidence: Optional[float],
-    plate_confidence: Optional[float],
+    detection_confidence: float | None,
+    plate_confidence: float | None,
     ocr_quality_weight: float = 0.7,
 ) -> float:
     """
@@ -119,6 +119,7 @@ def propagate_observation_confidence(
 # High-Level Plate Matcher
 # ---------------------------------------------------------------------------
 
+
 class PlateMatcher:
     """
     Evaluator for comparing license plate strings across observations.
@@ -126,7 +127,7 @@ class PlateMatcher:
 
     def __init__(
         self,
-        normalizer: Optional[OCRNormalizer] = None,
+        normalizer: OCRNormalizer | None = None,
         high_similarity_threshold: float = 0.85,
         min_partial_overlap: int = 5,
     ) -> None:

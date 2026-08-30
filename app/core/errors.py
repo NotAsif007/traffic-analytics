@@ -73,9 +73,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _error_response(503, "DATABASE_ERROR", "A database error occurred.")
 
     @app.exception_handler(ServiceUnavailableError)
-    async def handle_service_unavailable(
-        _: Request, exc: ServiceUnavailableError
-    ) -> JSONResponse:
+    async def handle_service_unavailable(_: Request, exc: ServiceUnavailableError) -> JSONResponse:
         logger.warning("service.unavailable", error=exc.message)
         return _error_response(503, "SERVICE_UNAVAILABLE", exc.message, exc.details)
 
@@ -85,9 +83,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _error_response(400, "DOMAIN_ERROR", exc.message, exc.details)
 
     @app.exception_handler(RequestValidationError)
-    async def handle_request_validation(
-        _: Request, exc: RequestValidationError
-    ) -> JSONResponse:
+    async def handle_request_validation(_: Request, exc: RequestValidationError) -> JSONResponse:
         """Translate Pydantic v2 validation errors into our error envelope."""
         errors = []
         for e in exc.errors():

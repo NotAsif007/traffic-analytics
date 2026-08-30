@@ -73,7 +73,7 @@ async def test_health_database_latency_recorded(client: AsyncClient) -> None:
 
     latency = data["components"]["database"]["latency_ms"]
     assert latency is not None
-    assert isinstance(latency, (int, float))
+    assert isinstance(latency, int | float)
     assert latency >= 0
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -26,15 +26,18 @@ VALID_ALERT_STATUSES = {"NEW", "ACKNOWLEDGED", "RESOLVED", "DISMISSED"}
 # Blacklist Schemas
 # ---------------------------------------------------------------------------
 
+
 class BlacklistEntryBase(AppBaseModel):
     plate_text: str = Field(..., max_length=20, examples=["KA01AB1234"])
-    reason: str = Field(..., max_length=255, examples=["Stolen vehicle report", "Wanted suspect vehicle"])
+    reason: str = Field(
+        ..., max_length=255, examples=["Stolen vehicle report", "Wanted suspect vehicle"]
+    )
     priority: str = Field(default="medium", examples=["low", "medium", "high", "critical"])
     is_active: bool = Field(default=True)
-    valid_from: Optional[datetime] = None
-    valid_until: Optional[datetime] = None
-    notes: Optional[str] = None
-    metadata_: Optional[dict[str, Any]] = Field(default=None, alias="metadata")
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    notes: str | None = None
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
 
     @field_validator("priority")
     @classmethod
@@ -49,13 +52,13 @@ class BlacklistEntryCreate(BlacklistEntryBase):
 
 
 class BlacklistEntryUpdate(AppBaseModel):
-    reason: Optional[str] = None
-    priority: Optional[str] = None
-    is_active: Optional[bool] = None
-    valid_from: Optional[datetime] = None
-    valid_until: Optional[datetime] = None
-    notes: Optional[str] = None
-    metadata_: Optional[dict[str, Any]] = Field(default=None, alias="metadata")
+    reason: str | None = None
+    priority: str | None = None
+    is_active: bool | None = None
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    notes: str | None = None
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
 
 
 class BlacklistEntryResponse(BlacklistEntryBase):
@@ -67,14 +70,15 @@ class BlacklistEntryResponse(BlacklistEntryBase):
 
 
 class BlacklistFilters(AppBaseModel):
-    plate_text: Optional[str] = None
-    priority: Optional[str] = None
-    is_active: Optional[bool] = None
+    plate_text: str | None = None
+    priority: str | None = None
+    is_active: bool | None = None
 
 
 # ---------------------------------------------------------------------------
 # Alert Schemas
 # ---------------------------------------------------------------------------
+
 
 class AlertBase(AppBaseModel):
     alert_code: str = Field(..., examples=["ALT-20260830-0001"])
@@ -84,13 +88,15 @@ class AlertBase(AppBaseModel):
     confidence: float = Field(default=0.90, ge=0.0, le=1.0)
     title: str = Field(..., max_length=255)
     description: str = Field(..., description="Explainable description of the anomaly or detection")
-    camera_id: Optional[uuid.UUID] = None
-    vehicle_identity_id: Optional[uuid.UUID] = None
-    trajectory_id: Optional[uuid.UUID] = None
-    observation_id: Optional[uuid.UUID] = None
-    blacklist_entry_id: Optional[uuid.UUID] = None
-    evidence: dict[str, Any] = Field(default_factory=dict, description="Structured explainability evidence")
-    metadata_: Optional[dict[str, Any]] = Field(default=None, alias="metadata")
+    camera_id: uuid.UUID | None = None
+    vehicle_identity_id: uuid.UUID | None = None
+    trajectory_id: uuid.UUID | None = None
+    observation_id: uuid.UUID | None = None
+    blacklist_entry_id: uuid.UUID | None = None
+    evidence: dict[str, Any] = Field(
+        default_factory=dict, description="Structured explainability evidence"
+    )
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
 
     @field_validator("alert_type")
     @classmethod
@@ -120,14 +126,14 @@ class AlertCreate(AlertBase):
 
 class AlertResponse(AlertBase):
     id: uuid.UUID
-    camera_name: Optional[str] = None
-    acknowledged_at: Optional[datetime] = None
-    acknowledged_by: Optional[str] = None
-    resolved_at: Optional[datetime] = None
-    resolved_by: Optional[str] = None
-    dismissed_at: Optional[datetime] = None
-    dismissed_by: Optional[str] = None
-    resolution_notes: Optional[str] = None
+    camera_name: str | None = None
+    acknowledged_at: datetime | None = None
+    acknowledged_by: str | None = None
+    resolved_at: datetime | None = None
+    resolved_by: str | None = None
+    dismissed_at: datetime | None = None
+    dismissed_by: str | None = None
+    resolution_notes: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -140,15 +146,15 @@ class AlertDetailResponse(AlertResponse):
 
 class AlertActionRequest(AppBaseModel):
     action_by: str = Field(default="operator", description="Identifier of operator or system user")
-    notes: Optional[str] = Field(default=None, description="Action explanation or resolution summary")
+    notes: str | None = Field(default=None, description="Action explanation or resolution summary")
 
 
 class AlertFilters(AppBaseModel):
-    alert_type: Optional[str] = None
-    severity: Optional[str] = None
-    status: Optional[str] = None
-    camera_id: Optional[uuid.UUID] = None
-    vehicle_identity_id: Optional[uuid.UUID] = None
-    min_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
+    alert_type: str | None = None
+    severity: str | None = None
+    status: str | None = None
+    camera_id: uuid.UUID | None = None
+    vehicle_identity_id: uuid.UUID | None = None
+    min_confidence: float | None = Field(None, ge=0.0, le=1.0)
+    created_after: datetime | None = None
+    created_before: datetime | None = None

@@ -69,9 +69,7 @@ async def test_create_camera_duplicate_id(
     """create_camera raises ConflictError if camera_id already exists."""
     with patch.object(camera_service._repo, "get_by_camera_id", return_value=sample_camera):
         with pytest.raises(ConflictError):
-            await camera_service.create_camera(
-                CameraCreate(camera_id="CAM-001", name="Duplicate")
-            )
+            await camera_service.create_camera(CameraCreate(camera_id="CAM-001", name="Duplicate"))
 
 
 @pytest.mark.unit
@@ -83,9 +81,7 @@ async def test_get_camera_not_found(camera_service: CameraService) -> None:
 
 
 @pytest.mark.unit
-async def test_get_camera_success(
-    camera_service: CameraService, sample_camera: MagicMock
-) -> None:
+async def test_get_camera_success(camera_service: CameraService, sample_camera: MagicMock) -> None:
     """get_camera returns CameraResponse for an existing camera."""
     with patch.object(camera_service._repo, "get_by_id", return_value=sample_camera):
         result = await camera_service.get_camera(sample_camera.id)

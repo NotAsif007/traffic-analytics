@@ -5,7 +5,6 @@ from __future__ import annotations
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
-from typing import Optional
 
 from app.events.contracts import DeadLetterRecord, DomainEvent, EventProcessingResult
 
@@ -44,20 +43,16 @@ class DeadLetterStore(ABC):
         self,
         event: DomainEvent,
         error: Exception,
-        traceback_str: Optional[str] = None,
-    ) -> DeadLetterRecord:
-        ...
+        traceback_str: str | None = None,
+    ) -> DeadLetterRecord: ...
 
     @abstractmethod
     async def list_dead_letters(
-        self, status: Optional[str] = None, limit: int = 50
-    ) -> list[DeadLetterRecord]:
-        ...
+        self, status: str | None = None, limit: int = 50
+    ) -> list[DeadLetterRecord]: ...
 
     @abstractmethod
-    async def get_by_id(self, record_id: uuid.UUID) -> Optional[DeadLetterRecord]:
-        ...
+    async def get_by_id(self, record_id: uuid.UUID) -> DeadLetterRecord | None: ...
 
     @abstractmethod
-    async def mark_resolved(self, record_id: uuid.UUID) -> None:
-        ...
+    async def mark_resolved(self, record_id: uuid.UUID) -> None: ...

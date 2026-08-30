@@ -50,13 +50,9 @@ class Road(UUIDMixin, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    cameras: Mapped[list[Camera]] = relationship(
-        "Camera", back_populates="road", lazy="select"
-    )
+    cameras: Mapped[list[Camera]] = relationship("Camera", back_populates="road", lazy="select")
 
-    __table_args__ = (
-        Index("ix_roads_geometry", "geometry", postgresql_using="gist"),
-    )
+    __table_args__ = (Index("ix_roads_geometry", "geometry", postgresql_using="gist"),)
 
     def __repr__(self) -> str:
         return f"<Road id={self.id} name={self.name!r}>"

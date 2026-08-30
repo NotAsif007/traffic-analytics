@@ -21,7 +21,6 @@ from __future__ import annotations
 import os
 from collections.abc import AsyncGenerator
 
-
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -86,7 +85,7 @@ def settings() -> Settings:
 # ---------------------------------------------------------------------------
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(loop_scope="session", scope="session")
 async def engine(settings: Settings) -> AsyncGenerator[AsyncEngine, None]:
     """
     Create an async engine for the test database.
@@ -102,7 +101,7 @@ async def engine(settings: Settings) -> AsyncGenerator[AsyncEngine, None]:
     await _engine.dispose()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(loop_scope="session", scope="session")
 async def create_tables(engine: AsyncEngine) -> AsyncGenerator[None, None]:
     """
     Create all tables before the test session; drop them after.
@@ -144,13 +143,12 @@ async def db_session(
         autoflush=False,
     )
 
-    async with engine.begin() as conn:
-        async with factory(bind=conn) as session:
-            await session.begin_nested()
+    async with engine.begin() as conn, factory(bind=conn) as session:
+        await session.begin_nested()
 
-            yield session
+        yield session
 
-            await session.rollback()
+        await session.rollback()
 
 
 # ---------------------------------------------------------------------------

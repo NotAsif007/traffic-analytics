@@ -8,9 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.models.camera import Camera
-from app.models.camera_connection import CameraConnection
-from app.models.trajectory import Trajectory, TrajectoryPoint
+from app.models.trajectory import Trajectory
 from app.models.vehicle_observation import VehicleObservation
 from app.services.analytics import AnalyticsService
 
@@ -34,7 +32,9 @@ def analytics_service(mock_session: AsyncMock) -> AnalyticsService:
     return AnalyticsService(mock_session)
 
 
-def _make_obs(cam_id: uuid.UUID, ts: datetime, v_class: str = "car", speed: float = 40.0) -> VehicleObservation:
+def _make_obs(
+    cam_id: uuid.UUID, ts: datetime, v_class: str = "car", speed: float = 40.0
+) -> VehicleObservation:
     obs = MagicMock(spec=VehicleObservation)
     obs.id = uuid.uuid4()
     obs.camera_id = cam_id
@@ -45,7 +45,9 @@ def _make_obs(cam_id: uuid.UUID, ts: datetime, v_class: str = "car", speed: floa
 
 
 @pytest.mark.unit
-async def test_get_traffic_volume(analytics_service: AnalyticsService, mock_session: AsyncMock) -> None:
+async def test_get_traffic_volume(
+    analytics_service: AnalyticsService, mock_session: AsyncMock
+) -> None:
     """Test volume aggregation across time buckets with vehicle class breakdowns."""
     obs_list = [
         _make_obs(CAM_1, T0 + timedelta(minutes=5), "car"),

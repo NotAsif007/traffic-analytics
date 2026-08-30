@@ -73,7 +73,9 @@ def upgrade() -> None:
         sa.UniqueConstraint("identity_code", name="uq_vehicle_identities_identity_code"),
     )
 
-    op.create_index("ix_vehicle_identities_identity_code", "vehicle_identities", ["identity_code"], unique=True)
+    op.create_index(
+        "ix_vehicle_identities_identity_code", "vehicle_identities", ["identity_code"], unique=True
+    )
     op.create_index("ix_vehicle_identities_primary_plate", "vehicle_identities", ["primary_plate"])
     op.create_index("ix_vehicle_identities_status", "vehicle_identities", ["status"])
     op.create_index("ix_vehicle_identities_first_seen_at", "vehicle_identities", ["first_seen_at"])
@@ -128,12 +130,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["target_observation_id"], ["vehicle_observations.id"], ondelete="SET NULL"
         ),
-        sa.ForeignKeyConstraint(
-            ["source_track_id"], ["vehicle_tracks.id"], ondelete="SET NULL"
-        ),
-        sa.ForeignKeyConstraint(
-            ["target_track_id"], ["vehicle_tracks.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["source_track_id"], ["vehicle_tracks.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(["target_track_id"], ["vehicle_tracks.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["source_camera_id"], ["cameras.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["target_camera_id"], ["cameras.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),

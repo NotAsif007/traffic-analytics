@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from app.anpr.matcher import levenshtein_distance
 from app.anpr.normalizer import OCRNormalizer

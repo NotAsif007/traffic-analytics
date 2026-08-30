@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +14,7 @@ from app.repositories.camera import CameraRepository
 from app.repositories.road import RoadRepository
 from app.schemas.camera import CameraCreate, CameraResponse, CameraUpdate
 from app.schemas.common import PaginatedResponse
-from app.services.road import _geometry_to_geojson, _geojson_to_wkt
+from app.services.road import _geojson_to_wkt, _geometry_to_geojson
 
 logger = get_logger(__name__)
 
@@ -85,14 +85,17 @@ class CameraService:
         *,
         page: int = 1,
         page_size: int = 20,
-        status: Optional[str] = None,
-        road_id: Optional[uuid.UUID] = None,
-        direction: Optional[str] = None,
+        status: str | None = None,
+        road_id: uuid.UUID | None = None,
+        direction: str | None = None,
     ) -> PaginatedResponse[CameraResponse]:
         offset = (page - 1) * page_size
         cameras, total = await self._repo.list_cameras(
-            offset=offset, limit=page_size,
-            status=status, road_id=road_id, direction=direction,
+            offset=offset,
+            limit=page_size,
+            status=status,
+            road_id=road_id,
+            direction=direction,
         )
         items = [_camera_to_response(c) for c in cameras]
         return PaginatedResponse.build(items=items, total=total, page=page, page_size=page_size)
@@ -109,8 +112,18 @@ class CameraService:
                 raise NotFoundError("Road", payload.road_id)
 
         updates: dict[str, Any] = {}
-        for field in ("name", "road_id", "direction", "fov_degrees", "lane_count",
-                      "lane_coverage", "status", "timezone", "height_m", "notes"):
+        for field in (
+            "name",
+            "road_id",
+            "direction",
+            "fov_degrees",
+            "lane_count",
+            "lane_coverage",
+            "status",
+            "timezone",
+            "height_m",
+            "notes",
+        ):
             val = getattr(payload, field, None)
             if val is not None:
                 updates[field] = val

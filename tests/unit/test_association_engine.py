@@ -19,7 +19,9 @@ CAM_6 = uuid.uuid4()
 T0 = datetime(2026, 8, 30, 10, 0, 0, tzinfo=timezone.utc)
 
 
-def _make_connection(src_cam: uuid.UUID, dst_cam: uuid.UUID, min_s: int = 60, max_s: int = 300, avg_s: int = 150) -> MagicMock:
+def _make_connection(
+    src_cam: uuid.UUID, dst_cam: uuid.UUID, min_s: int = 60, max_s: int = 300, avg_s: int = 150
+) -> MagicMock:
     conn = MagicMock()
     conn.source_camera_id = src_cam
     conn.destination_camera_id = dst_cam
@@ -37,6 +39,7 @@ def engine() -> AssociationEngine:
 # ---------------------------------------------------------------------------
 # Scenario 1: Exact Plate Match on Connected Road
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_scenario_exact_plate_match(engine: AssociationEngine) -> None:
@@ -72,6 +75,7 @@ def test_scenario_exact_plate_match(engine: AssociationEngine) -> None:
 # ---------------------------------------------------------------------------
 # Scenario 2: One OCR Character Error (AS01AB1234 -> AS01AB1284)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_scenario_single_character_ocr_error(engine: AssociationEngine) -> None:
@@ -109,6 +113,7 @@ def test_scenario_single_character_ocr_error(engine: AssociationEngine) -> None:
 # Scenario 3: Missing / Unreadable Plate with Compatible Kinematics & Color
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_scenario_missing_plate_appearance_match(engine: AssociationEngine) -> None:
     s1 = SightingContext(
@@ -145,6 +150,7 @@ def test_scenario_missing_plate_appearance_match(engine: AssociationEngine) -> N
 # Scenario 4: Different Vehicle with Similar Appearance (Plate Mismatch)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_scenario_different_vehicle_plate_mismatch(engine: AssociationEngine) -> None:
     s1 = SightingContext(
@@ -177,6 +183,7 @@ def test_scenario_different_vehicle_plate_mismatch(engine: AssociationEngine) ->
 # Scenario 5: Impossible Travel Time (Speed Violation)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_scenario_impossible_travel_time(engine: AssociationEngine) -> None:
     s1 = SightingContext(
@@ -208,6 +215,7 @@ def test_scenario_impossible_travel_time(engine: AssociationEngine) -> None:
 # Scenario 6: Incompatible Direction
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_scenario_opposing_direction(engine: AssociationEngine) -> None:
     s1 = SightingContext(
@@ -233,6 +241,7 @@ def test_scenario_opposing_direction(engine: AssociationEngine) -> None:
 # ---------------------------------------------------------------------------
 # Critical Multi-Camera Chain Test: C01 (10:00) -> C03 (10:05) -> C06 (10:12)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_critical_multi_camera_association_chain(engine: AssociationEngine) -> None:

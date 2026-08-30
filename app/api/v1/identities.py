@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, status
 
@@ -16,7 +16,6 @@ from app.schemas.vehicle_identity import (
     VehicleIdentityCreate,
     VehicleIdentityDetailResponse,
     VehicleIdentityResponse,
-    VehicleMatchResponse,
 )
 from app.services.vehicle_identity import VehicleIdentityService
 
@@ -52,12 +51,12 @@ async def list_identities(
     svc: IdentityServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    status: Optional[str] = Query(None, description="candidate | accepted | rejected | needs_review"),
-    primary_plate: Optional[str] = Query(None, description="Partial plate text match"),
-    vehicle_class: Optional[str] = Query(None, description="Filter by vehicle class"),
-    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0),
-    seen_after: Optional[datetime] = Query(None, description="Seen after timestamp"),
-    seen_before: Optional[datetime] = Query(None, description="Seen before timestamp"),
+    status: str | None = Query(None, description="candidate | accepted | rejected | needs_review"),
+    primary_plate: str | None = Query(None, description="Partial plate text match"),
+    vehicle_class: str | None = Query(None, description="Filter by vehicle class"),
+    min_confidence: float | None = Query(None, ge=0.0, le=1.0),
+    seen_after: datetime | None = Query(None, description="Seen after timestamp"),
+    seen_before: datetime | None = Query(None, description="Seen before timestamp"),
 ) -> PaginatedResponse[VehicleIdentityResponse]:
     filters = IdentityFilters(
         status=status,
@@ -93,6 +92,7 @@ async def associate_observation(
 ) -> dict[str, Any]:
     if not request.observation_id:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=400, detail="observation_id is required")
 
     identity, match = await svc.associate_observation(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -37,12 +37,20 @@ async def list_trajectories(
     svc: TrajectoryServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    vehicle_identity_id: Optional[uuid.UUID] = Query(None, description="Filter by vehicle identity UUID"),
-    camera_id: Optional[uuid.UUID] = Query(None, description="Filter trajectories passing through camera"),
-    status: Optional[str] = Query(None, description="active | completed | terminated"),
-    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0),
-    start_after: Optional[datetime] = Query(None, description="Filter trajectories started after timestamp"),
-    end_before: Optional[datetime] = Query(None, description="Filter trajectories ended before timestamp"),
+    vehicle_identity_id: uuid.UUID | None = Query(
+        None, description="Filter by vehicle identity UUID"
+    ),
+    camera_id: uuid.UUID | None = Query(
+        None, description="Filter trajectories passing through camera"
+    ),
+    status: str | None = Query(None, description="active | completed | terminated"),
+    min_confidence: float | None = Query(None, ge=0.0, le=1.0),
+    start_after: datetime | None = Query(
+        None, description="Filter trajectories started after timestamp"
+    ),
+    end_before: datetime | None = Query(
+        None, description="Filter trajectories ended before timestamp"
+    ),
 ) -> PaginatedResponse[TrajectoryResponse]:
     filters = TrajectoryFilters(
         vehicle_identity_id=vehicle_identity_id,

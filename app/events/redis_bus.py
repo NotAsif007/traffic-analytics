@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import json
-from typing import Optional
-
 from app.core.logging import get_logger
 from app.events.contracts import DomainEvent, EventProcessingResult
 from app.events.in_memory import InMemoryDeadLetterStore, InMemoryEventBus
@@ -21,8 +18,8 @@ class ResilientEventBus(EventBus):
 
     def __init__(
         self,
-        redis_url: Optional[str] = None,
-        dead_letter_store: Optional[DeadLetterStore] = None,
+        redis_url: str | None = None,
+        dead_letter_store: DeadLetterStore | None = None,
     ) -> None:
         self._dead_letter = dead_letter_store or InMemoryDeadLetterStore()
         self._memory_bus = InMemoryEventBus(dead_letter_store=self._dead_letter)
@@ -42,6 +39,7 @@ class ResilientEventBus(EventBus):
         if self._redis_client is None:
             try:
                 import redis.asyncio as aioredis
+
                 self._redis_client = aioredis.from_url(
                     self._redis_url, socket_timeout=1.0, socket_connect_timeout=1.0
                 )

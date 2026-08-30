@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,8 +12,6 @@ from app.association.engine import AssociationEngine
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.models.vehicle_identity import VehicleIdentity, VehicleMatch
-from app.models.vehicle_observation import VehicleObservation
-from app.models.vehicle_track import VehicleTrack
 from app.repositories.camera_connection import CameraConnectionRepository
 from app.repositories.vehicle_identity import VehicleIdentityRepository, VehicleMatchRepository
 from app.repositories.vehicle_observation import VehicleObservationRepository
@@ -141,8 +138,8 @@ class VehicleIdentityService:
     async def list_matches(
         self,
         *,
-        identity_id: Optional[uuid.UUID] = None,
-        status: Optional[str] = None,
+        identity_id: uuid.UUID | None = None,
+        status: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[VehicleMatchResponse]:
@@ -157,7 +154,7 @@ class VehicleIdentityService:
         self,
         observation_id: uuid.UUID,
         search_window_minutes: int = 60,
-    ) -> tuple[VehicleIdentityResponse, Optional[VehicleMatchResponse]]:
+    ) -> tuple[VehicleIdentityResponse, VehicleMatchResponse | None]:
         """
         Cross-camera associate a newly ingested vehicle observation.
 
@@ -186,10 +183,10 @@ class VehicleIdentityService:
         window_start = obs.observed_at - timedelta(minutes=search_window_minutes)
         candidates = await self._identity_repo.find_recent_identities(window_start)
 
-        best_decision: Optional[AssociationDecision] = None
-        best_candidate: Optional[VehicleIdentity] = None
-        best_source_obs_id: Optional[uuid.UUID] = None
-        best_source_cam_id: Optional[uuid.UUID] = None
+        best_decision: AssociationDecision | None = None
+        best_candidate: VehicleIdentity | None = None
+        best_source_obs_id: uuid.UUID | None = None
+        best_source_cam_id: uuid.UUID | None = None
 
         for ident in candidates:
             # Check camera connection
@@ -214,14 +211,15 @@ class VehicleIdentityService:
 
             decision = self._engine.evaluate_pair(source_context, target_context, conn)
 
-            if decision.is_accepted or decision.status == "needs_review":
-                if not best_decision or decision.match_score > best_decision.match_score:
-                    best_decision = decision
-                    best_candidate = ident
-                    best_source_cam_id = source_context.camera_id
-                    best_source_obs_id = (
-                        ident.matches[-1].target_observation_id if ident.matches else None
-                    )
+            if (decision.is_accepted or decision.status == "needs_review") and (
+                not best_decision or decision.match_score > best_decision.match_score
+            ):
+                best_decision = decision
+                best_candidate = ident
+                best_source_cam_id = source_context.camera_id
+                best_source_obs_id = (
+                    ident.matches[-1].target_observation_id if ident.matches else None
+                )
 
         # Apply match or create new hypothesis
         if best_candidate and best_decision:
@@ -230,9 +228,8 @@ class VehicleIdentityService:
             best_candidate.last_seen_at = max(best_candidate.last_seen_at, obs.observed_at)
 
             # Update primary plate if this sighting has higher OCR confidence
-            if (
-                obs.plate_text
-                and (obs.plate_confidence or 0.0) > (best_candidate.plate_confidence or 0.0)
+            if obs.plate_text and (obs.plate_confidence or 0.0) > (
+                best_candidate.plate_confidence or 0.0
             ):
                 best_candidate.primary_plate = obs.plate_text
                 best_candidate.plate_confidence = obs.plate_confidence

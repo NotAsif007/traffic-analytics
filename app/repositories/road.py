@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import uuid
-from typing import Any, Optional
-
-from geoalchemy2.functions import ST_DWithin, ST_GeomFromGeoJSON
+from geoalchemy2.functions import ST_DWithin
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,8 +21,8 @@ class RoadRepository(BaseRepository[Road]):
         *,
         offset: int = 0,
         limit: int = 20,
-        road_type: Optional[str] = None,
-        direction: Optional[str] = None,
+        road_type: str | None = None,
+        direction: str | None = None,
     ) -> tuple[list[Road], int]:
         """List roads with optional filters."""
         query = select(Road)
@@ -42,10 +39,8 @@ class RoadRepository(BaseRepository[Road]):
         rows = (await self._session.execute(query.offset(offset).limit(limit))).scalars().all()
         return list(rows), total
 
-    async def get_by_external_id(self, external_id: str) -> Optional[Road]:
-        result = await self._session.execute(
-            select(Road).where(Road.external_id == external_id)
-        )
+    async def get_by_external_id(self, external_id: str) -> Road | None:
+        result = await self._session.execute(select(Road).where(Road.external_id == external_id))
         return result.scalar_one_or_none()
 
     async def find_near_point(

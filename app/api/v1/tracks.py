@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
@@ -51,13 +51,15 @@ async def list_tracks(
     svc: TrackServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    camera_id: Optional[uuid.UUID] = Query(None, description="Filter by camera UUID"),
-    status: Optional[str] = Query(None, description="Filter by track status: active|completed|lost|terminated"),
-    vehicle_class: Optional[str] = Query(None, description="Filter by vehicle class"),
-    plate_text: Optional[str] = Query(None, description="Partial plate text match"),
-    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0),
-    start_after: Optional[datetime] = Query(None, description="Tracks starting after this timestamp"),
-    end_before: Optional[datetime] = Query(None, description="Tracks ending before this timestamp"),
+    camera_id: uuid.UUID | None = Query(None, description="Filter by camera UUID"),
+    status: str | None = Query(
+        None, description="Filter by track status: active|completed|lost|terminated"
+    ),
+    vehicle_class: str | None = Query(None, description="Filter by vehicle class"),
+    plate_text: str | None = Query(None, description="Partial plate text match"),
+    min_confidence: float | None = Query(None, ge=0.0, le=1.0),
+    start_after: datetime | None = Query(None, description="Tracks starting after this timestamp"),
+    end_before: datetime | None = Query(None, description="Tracks ending before this timestamp"),
 ) -> PaginatedResponse[VehicleTrackResponse]:
     filters = TrackFilters(
         camera_id=camera_id,

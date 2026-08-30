@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +20,7 @@ class VehicleIdentityRepository(BaseRepository[VehicleIdentity]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def get_with_matches(self, identity_id: uuid.UUID) -> Optional[VehicleIdentity]:
+    async def get_with_matches(self, identity_id: uuid.UUID) -> VehicleIdentity | None:
         """Fetch a vehicle identity including all associated match events."""
         result = await self._session.execute(
             select(VehicleIdentity)
@@ -30,7 +29,7 @@ class VehicleIdentityRepository(BaseRepository[VehicleIdentity]):
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, identity_code: str) -> Optional[VehicleIdentity]:
+    async def get_by_code(self, identity_code: str) -> VehicleIdentity | None:
         result = await self._session.execute(
             select(VehicleIdentity).where(VehicleIdentity.identity_code == identity_code)
         )
@@ -66,10 +65,14 @@ class VehicleIdentityRepository(BaseRepository[VehicleIdentity]):
 
         total = (await self._session.execute(count_query)).scalar_one()
         rows = (
-            await self._session.execute(
-                query.order_by(VehicleIdentity.last_seen_at.desc()).offset(offset).limit(limit)
+            (
+                await self._session.execute(
+                    query.order_by(VehicleIdentity.last_seen_at.desc()).offset(offset).limit(limit)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows), total
 
     async def find_recent_identities(
@@ -98,8 +101,8 @@ class VehicleMatchRepository(BaseRepository[VehicleMatch]):
     async def list_matches(
         self,
         *,
-        identity_id: Optional[uuid.UUID] = None,
-        status: Optional[str] = None,
+        identity_id: uuid.UUID | None = None,
+        status: str | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[VehicleMatch], int]:
@@ -118,8 +121,12 @@ class VehicleMatchRepository(BaseRepository[VehicleMatch]):
 
         total = (await self._session.execute(count_query)).scalar_one()
         rows = (
-            await self._session.execute(
-                query.order_by(VehicleMatch.created_at.desc()).offset(offset).limit(limit)
+            (
+                await self._session.execute(
+                    query.order_by(VehicleMatch.created_at.desc()).offset(offset).limit(limit)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows), total

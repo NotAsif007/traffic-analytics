@@ -60,9 +60,7 @@ async def test_list_roads_pagination(client: AsyncClient) -> None:
 @pytest.mark.integration
 async def test_get_road(client: AsyncClient) -> None:
     """GET /roads/{id} retrieves the created road."""
-    create_resp = await client.post(
-        "/api/v1/roads/", json={"name": "Retrieve Road Test"}
-    )
+    create_resp = await client.post("/api/v1/roads/", json={"name": "Retrieve Road Test"})
     road_id = create_resp.json()["id"]
 
     response = await client.get(f"/api/v1/roads/{road_id}")
@@ -74,6 +72,7 @@ async def test_get_road(client: AsyncClient) -> None:
 async def test_get_road_not_found(client: AsyncClient) -> None:
     """GET /roads/{non-existent-id} returns 404."""
     import uuid
+
     response = await client.get(f"/api/v1/roads/{uuid.uuid4()}")
     assert response.status_code == 404
     assert "error" in response.json()
@@ -123,9 +122,7 @@ async def test_filter_roads_by_direction(client: AsyncClient) -> None:
 @pytest.mark.integration
 async def test_duplicate_external_id_returns_conflict(client: AsyncClient) -> None:
     """Creating two roads with the same external_id returns 409."""
-    await client.post(
-        "/api/v1/roads/", json={"name": "Road A", "external_id": "way/999"}
-    )
+    await client.post("/api/v1/roads/", json={"name": "Road A", "external_id": "way/999"})
     response = await client.post(
         "/api/v1/roads/", json={"name": "Road B", "external_id": "way/999"}
     )

@@ -114,10 +114,16 @@ def upgrade() -> None:
             name="ck_alerts_confidence",
         ),
         sa.ForeignKeyConstraint(["camera_id"], ["cameras.id"], ondelete="SET NULL"),
-        sa.ForeignKeyConstraint(["vehicle_identity_id"], ["vehicle_identities.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(
+            ["vehicle_identity_id"], ["vehicle_identities.id"], ondelete="SET NULL"
+        ),
         sa.ForeignKeyConstraint(["trajectory_id"], ["trajectories.id"], ondelete="SET NULL"),
-        sa.ForeignKeyConstraint(["observation_id"], ["vehicle_observations.id"], ondelete="SET NULL"),
-        sa.ForeignKeyConstraint(["blacklist_entry_id"], ["blacklist_entries.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(
+            ["observation_id"], ["vehicle_observations.id"], ondelete="SET NULL"
+        ),
+        sa.ForeignKeyConstraint(
+            ["blacklist_entry_id"], ["blacklist_entries.id"], ondelete="SET NULL"
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("alert_code", name="uq_alerts_alert_code"),
     )

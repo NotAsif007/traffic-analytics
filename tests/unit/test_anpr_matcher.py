@@ -12,16 +12,16 @@ from app.anpr.matcher import (
     propagate_observation_confidence,
 )
 
-
 # ---------------------------------------------------------------------------
 # Algorithm unit tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_levenshtein_distance() -> None:
     assert levenshtein_distance("AS01AB1234", "AS01AB1234") == 0
     assert levenshtein_distance("AS01AB1234", "AS01AB1284") == 1  # 3 -> 8
-    assert levenshtein_distance("AS01AB1234", "AS01AB123") == 1   # missing '4'
+    assert levenshtein_distance("AS01AB1234", "AS01AB123") == 1  # missing '4'
     assert levenshtein_distance("AS01AB1234", "MH12CD5678") == 10
 
 
@@ -48,6 +48,7 @@ def test_partial_match_logic() -> None:
 # ---------------------------------------------------------------------------
 # Realistic Plate Matcher Test Cases
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def matcher() -> PlateMatcher:
@@ -112,6 +113,7 @@ def test_complete_mismatch(matcher: PlateMatcher) -> None:
 # ---------------------------------------------------------------------------
 # Confidence Propagation Tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_propagate_observation_confidence_both_signals() -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -37,31 +37,33 @@ class BlacklistEntry(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "blacklist_entries"
 
     plate_text: Mapped[str] = mapped_column(
-        String(20), nullable=False, index=True,
-        comment="Normalized license plate text to watch"
+        String(20), nullable=False, index=True, comment="Normalized license plate text to watch"
     )
 
     reason: Mapped[str] = mapped_column(
-        String(255), nullable=False,
-        comment="Reason for blacklisting, e.g. Stolen Vehicle, Tax Default, Amber Alert"
+        String(255),
+        nullable=False,
+        comment="Reason for blacklisting, e.g. Stolen Vehicle, Tax Default, Amber Alert",
     )
 
     priority: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="medium", index=True,
-        comment="low | medium | high | critical"
+        String(32),
+        nullable=False,
+        default="medium",
+        index=True,
+        comment="low | medium | high | critical",
     )
 
     is_active: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True, index=True,
-        comment="Whether this watchlist entry is actively monitored"
+        Boolean,
+        nullable=False,
+        default=True,
+        index=True,
+        comment="Whether this watchlist entry is actively monitored",
     )
 
-    valid_from: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    valid_until: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -95,28 +97,41 @@ class Alert(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "alerts"
 
     alert_code: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, index=True,
-        comment="Unique human-readable alert code, e.g. ALT-20260830-0001"
+        String(64),
+        nullable=False,
+        unique=True,
+        index=True,
+        comment="Unique human-readable alert code, e.g. ALT-20260830-0001",
     )
 
     alert_type: Mapped[str] = mapped_column(
-        String(64), nullable=False, index=True,
-        comment="BLACKLIST_MATCH | ROUTE_ANOMALY | TRAVEL_TIME_ANOMALY | CAMERA_OFFLINE | UNUSUAL_VEHICLE_PATTERN"
+        String(64),
+        nullable=False,
+        index=True,
+        comment="BLACKLIST_MATCH | ROUTE_ANOMALY | TRAVEL_TIME_ANOMALY | CAMERA_OFFLINE | UNUSUAL_VEHICLE_PATTERN",
     )
 
     severity: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="medium", index=True,
-        comment="low | medium | high | critical"
+        String(32),
+        nullable=False,
+        default="medium",
+        index=True,
+        comment="low | medium | high | critical",
     )
 
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="NEW", index=True,
-        comment="NEW | ACKNOWLEDGED | RESOLVED | DISMISSED"
+        String(32),
+        nullable=False,
+        default="NEW",
+        index=True,
+        comment="NEW | ACKNOWLEDGED | RESOLVED | DISMISSED",
     )
 
     confidence: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.9,
-        comment="Overall confidence score in the alert validity"
+        Numeric(5, 4),
+        nullable=False,
+        default=0.9,
+        comment="Overall confidence score in the alert validity",
     )
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -160,8 +175,10 @@ class Alert(UUIDMixin, TimestampMixin, Base):
 
     # Detailed structured evidence for courtroom/auditing explainability
     evidence: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, default=dict,
-        comment="Structured explainability evidence and raw signal values"
+        JSONB,
+        nullable=False,
+        default=dict,
+        comment="Structured explainability evidence and raw signal values",
     )
 
     # Lifecycle audit trail
@@ -179,10 +196,16 @@ class Alert(UUIDMixin, TimestampMixin, Base):
 
     # Relationships
     camera: Mapped[Camera | None] = relationship("Camera", lazy="select")
-    vehicle_identity: Mapped[VehicleIdentity | None] = relationship("VehicleIdentity", lazy="select")
+    vehicle_identity: Mapped[VehicleIdentity | None] = relationship(
+        "VehicleIdentity", lazy="select"
+    )
     trajectory: Mapped[Trajectory | None] = relationship("Trajectory", lazy="select")
-    observation: Mapped[VehicleObservation | None] = relationship("VehicleObservation", lazy="select")
-    blacklist_entry: Mapped[BlacklistEntry | None] = relationship("BlacklistEntry", back_populates="alerts", lazy="select")
+    observation: Mapped[VehicleObservation | None] = relationship(
+        "VehicleObservation", lazy="select"
+    )
+    blacklist_entry: Mapped[BlacklistEntry | None] = relationship(
+        "BlacklistEntry", back_populates="alerts", lazy="select"
+    )
 
     __table_args__ = (
         CheckConstraint(

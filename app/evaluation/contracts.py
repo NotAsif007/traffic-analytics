@@ -4,20 +4,21 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
 from app.schemas.common import AppBaseModel
 from app.schemas.vehicle_observation import BoundingBox
 
-
 # ---------------------------------------------------------------------------
 # Ground Truth Definitions
 # ---------------------------------------------------------------------------
 
+
 class GroundTruthObservation(AppBaseModel):
     """Ground truth state of a vehicle observation at a camera."""
+
     observation_id: str
     camera_id: uuid.UUID
     camera_name: str
@@ -27,9 +28,9 @@ class GroundTruthObservation(AppBaseModel):
     true_class: str
     true_color: str
     true_bbox: BoundingBox
-    true_plate_bbox: Optional[BoundingBox] = None
-    simulated_ocr_plate: Optional[str] = None  # May contain simulated noise/errors
-    simulated_ocr_confidence: Optional[float] = None
+    true_plate_bbox: BoundingBox | None = None
+    simulated_ocr_plate: str | None = None  # May contain simulated noise/errors
+    simulated_ocr_confidence: float | None = None
     is_blacklisted: bool = False
     is_speed_anomaly: bool = False
     is_route_anomaly: bool = False
@@ -37,6 +38,7 @@ class GroundTruthObservation(AppBaseModel):
 
 class GroundTruthVehicle(AppBaseModel):
     """Ground truth identity and journey of a physical vehicle."""
+
     vehicle_id: str
     plate: str
     vehicle_class: str
@@ -49,6 +51,7 @@ class GroundTruthVehicle(AppBaseModel):
 # ---------------------------------------------------------------------------
 # Evaluation Metrics Schemas
 # ---------------------------------------------------------------------------
+
 
 class ANPRMetrics(AppBaseModel):
     total_ground_truth_plates: int
@@ -105,6 +108,7 @@ class EvaluationReport(AppBaseModel):
     """
     Comprehensive machine-readable evaluation report across all system layers.
     """
+
     benchmark_name: str
     evaluation_timestamp: datetime
     dataset_summary: dict[str, Any]

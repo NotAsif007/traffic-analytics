@@ -12,7 +12,7 @@ from app.models.alert import Alert, BlacklistEntry
 from app.models.camera_connection import CameraConnection
 from app.models.trajectory import Trajectory, TrajectoryPoint
 from app.models.vehicle_observation import VehicleObservation
-from app.schemas.alert import AlertActionRequest, BlacklistEntryCreate
+from app.schemas.alert import AlertActionRequest
 from app.services.alert import AlertService
 
 CAM_ID = uuid.uuid4()
@@ -162,13 +162,13 @@ async def test_alert_lifecycle_workflow(
     alert.updated_at = T0
 
     with patch.object(alert_service._alert_repo, "get_by_id", return_value=alert):
-        ack = await alert_service.acknowledge_alert(
+        await alert_service.acknowledge_alert(
             alert.id, AlertActionRequest(action_by="officer_1", notes="Dispatching patrol")
         )
         assert alert.status == "ACKNOWLEDGED"
         assert alert.acknowledged_by == "officer_1"
 
-        res = await alert_service.resolve_alert(
+        await alert_service.resolve_alert(
             alert.id, AlertActionRequest(action_by="officer_1", notes="Vehicle intercepted")
         )
         assert alert.status == "RESOLVED"

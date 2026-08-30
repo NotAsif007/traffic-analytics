@@ -4,22 +4,21 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
 
 from pydantic import Field
 
 from app.schemas.common import AppBaseModel
 
-
 # ---------------------------------------------------------------------------
 # 1. Traffic Volume
 # ---------------------------------------------------------------------------
 
+
 class TrafficVolumeBucket(AppBaseModel):
     bucket_start: datetime
     bucket_end: datetime
-    camera_id: Optional[uuid.UUID] = None
-    camera_name: Optional[str] = None
+    camera_id: uuid.UUID | None = None
+    camera_name: str | None = None
     vehicle_count: int
     vehicle_class_counts: dict[str, int] = Field(default_factory=dict)
 
@@ -35,6 +34,7 @@ class TrafficVolumeResponse(AppBaseModel):
 # ---------------------------------------------------------------------------
 # 2. Vehicle-Class Distribution
 # ---------------------------------------------------------------------------
+
 
 class VehicleClassCount(AppBaseModel):
     vehicle_class: str
@@ -53,11 +53,12 @@ class VehicleClassDistributionResponse(AppBaseModel):
 # 3. Traffic Density (Transparent Methodology)
 # ---------------------------------------------------------------------------
 
+
 class TrafficDensityResponse(AppBaseModel):
-    camera_id: Optional[uuid.UUID] = None
-    camera_name: Optional[str] = None
-    road_id: Optional[uuid.UUID] = None
-    road_name: Optional[str] = None
+    camera_id: uuid.UUID | None = None
+    camera_name: str | None = None
+    road_id: uuid.UUID | None = None
+    road_name: str | None = None
     start_time: datetime
     end_time: datetime
     flow_rate_veh_per_hour: float
@@ -78,11 +79,12 @@ class TrafficDensityResponse(AppBaseModel):
 # 4. Average Travel Time & Percentiles
 # ---------------------------------------------------------------------------
 
+
 class PairTravelTime(AppBaseModel):
     source_camera_id: uuid.UUID
-    source_camera_name: Optional[str] = None
+    source_camera_name: str | None = None
     destination_camera_id: uuid.UUID
-    destination_camera_name: Optional[str] = None
+    destination_camera_name: str | None = None
     sample_count: int
     mean_travel_time_seconds: float
     median_travel_time_seconds: float
@@ -102,11 +104,12 @@ class TravelTimeStatsResponse(AppBaseModel):
 # 5. Congestion Indicator
 # ---------------------------------------------------------------------------
 
+
 class CongestionSegment(AppBaseModel):
     source_camera_id: uuid.UUID
-    source_camera_name: Optional[str] = None
+    source_camera_name: str | None = None
     destination_camera_id: uuid.UUID
-    destination_camera_name: Optional[str] = None
+    destination_camera_name: str | None = None
     current_mean_travel_time_s: float
     baseline_travel_time_s: float
     congestion_indicator: float = Field(
@@ -127,11 +130,12 @@ class CongestionReportResponse(AppBaseModel):
 # 6. Origin-Destination Matrix
 # ---------------------------------------------------------------------------
 
+
 class ODMatrixCell(AppBaseModel):
     origin_camera_id: uuid.UUID
-    origin_camera_name: Optional[str] = None
+    origin_camera_name: str | None = None
     destination_camera_id: uuid.UUID
-    destination_camera_name: Optional[str] = None
+    destination_camera_name: str | None = None
     trip_count: int
     average_duration_seconds: float
     average_distance_meters: float
@@ -147,6 +151,7 @@ class ODMatrixResponse(AppBaseModel):
 # ---------------------------------------------------------------------------
 # 7. Route Frequency
 # ---------------------------------------------------------------------------
+
 
 class RouteFrequencyItem(AppBaseModel):
     route_camera_names: list[str]
@@ -168,14 +173,15 @@ class RouteFrequencyResponse(AppBaseModel):
 # 8. Camera Health & Telemetry
 # ---------------------------------------------------------------------------
 
+
 class CameraHealthItem(AppBaseModel):
     camera_id: uuid.UUID
     camera_name: str
     status: str = Field(..., description="online | stale | offline | error")
     observations_last_hour: int
     observations_per_minute: float
-    last_observation_at: Optional[datetime] = None
-    inactivity_seconds: Optional[int] = None
+    last_observation_at: datetime | None = None
+    inactivity_seconds: int | None = None
 
 
 class CameraHealthResponse(AppBaseModel):

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
@@ -49,9 +49,9 @@ async def list_blacklist_entries(
     svc: AlertServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    plate_text: Optional[str] = Query(None),
-    priority: Optional[str] = Query(None),
-    is_active: Optional[bool] = Query(None),
+    plate_text: str | None = Query(None),
+    priority: str | None = Query(None),
+    is_active: bool | None = Query(None),
 ) -> PaginatedResponse[BlacklistEntryResponse]:
     filters = BlacklistFilters(plate_text=plate_text, priority=priority, is_active=is_active)
     return await svc.list_blacklist_entries(filters=filters, page=page, page_size=page_size)

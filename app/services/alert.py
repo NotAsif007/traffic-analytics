@@ -4,15 +4,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.anpr.matcher import PlateMatcher
-from app.core.exceptions import NotFoundError, ValidationError
+from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.models.alert import Alert, BlacklistEntry
-from app.models.camera import Camera
 from app.models.camera_connection import CameraConnection
 from app.models.trajectory import Trajectory, TrajectoryPoint
 from app.models.vehicle_observation import VehicleObservation
@@ -20,7 +18,6 @@ from app.repositories.alert import AlertRepository, BlacklistRepository
 from app.repositories.camera import CameraRepository
 from app.schemas.alert import (
     AlertActionRequest,
-    AlertCreate,
     AlertDetailResponse,
     AlertFilters,
     AlertResponse,
@@ -93,9 +90,7 @@ class AlertService:
     # Blacklist Management
     # -----------------------------------------------------------------------
 
-    async def create_blacklist_entry(
-        self, payload: BlacklistEntryCreate
-    ) -> BlacklistEntryResponse:
+    async def create_blacklist_entry(self, payload: BlacklistEntryCreate) -> BlacklistEntryResponse:
         entry = BlacklistEntry(
             id=uuid.uuid4(),
             plate_text=payload.plate_text.upper().replace(" ", ""),
@@ -197,9 +192,7 @@ class AlertService:
         await self._session.refresh(alert)
         return _alert_to_response(alert)
 
-    async def resolve_alert(
-        self, alert_id: uuid.UUID, action: AlertActionRequest
-    ) -> AlertResponse:
+    async def resolve_alert(self, alert_id: uuid.UUID, action: AlertActionRequest) -> AlertResponse:
         alert = await self._alert_repo.get_by_id(alert_id)
         if not alert:
             raise NotFoundError("Alert", alert_id)
@@ -214,9 +207,7 @@ class AlertService:
         await self._session.refresh(alert)
         return _alert_to_response(alert)
 
-    async def dismiss_alert(
-        self, alert_id: uuid.UUID, action: AlertActionRequest
-    ) -> AlertResponse:
+    async def dismiss_alert(self, alert_id: uuid.UUID, action: AlertActionRequest) -> AlertResponse:
         alert = await self._alert_repo.get_by_id(alert_id)
         if not alert:
             raise NotFoundError("Alert", alert_id)
@@ -235,9 +226,7 @@ class AlertService:
     # Automated Alert Generators (Confidence & Evidence Preserving)
     # -----------------------------------------------------------------------
 
-    async def check_observation_blacklist(
-        self, obs: VehicleObservation
-    ) -> Optional[Alert]:
+    async def check_observation_blacklist(self, obs: VehicleObservation) -> Alert | None:
         """
         Check if an observation matches any active watchlist/blacklist entry.
         Generates an explainable BLACKLIST_MATCH alert preserving all evidence.
@@ -250,7 +239,9 @@ class AlertService:
             comp = self._plate_matcher.compare(obs.plate_text, entry.plate_text)
             if comp.similarity_score >= 0.85:
                 # Match detected
-                alert_code = f"ALT-BLK-{obs.observed_at.strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
+                alert_code = (
+                    f"ALT-BLK-{obs.observed_at.strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
+                )
                 title = f"Watchlist Plate Match: {entry.plate_text}"
                 desc = (
                     f"Observed vehicle plate '{obs.plate_text}' matched active watchlist entry "
@@ -259,7 +250,9 @@ class AlertService:
 
                 evidence = {
                     "observed_plate": obs.plate_text,
-                    "plate_confidence": float(obs.plate_confidence) if obs.plate_confidence else None,
+                    "plate_confidence": float(obs.plate_confidence)
+                    if obs.plate_confidence
+                    else None,
                     "blacklist_plate": entry.plate_text,
                     "match_similarity": comp.similarity_score,
                     "match_type": comp.match_type,
@@ -296,8 +289,8 @@ class AlertService:
         trajectory: Trajectory,
         p_from: TrajectoryPoint,
         p_to: TrajectoryPoint,
-        conn: Optional[CameraConnection],
-    ) -> Optional[Alert]:
+        conn: CameraConnection | None,
+    ) -> Alert | None:
         """
         Check for impossible travel times (extreme speed violation) between camera nodes.
         Generates explainable TRAVEL_TIME_ANOMALY alert.
@@ -307,9 +300,13 @@ class AlertService:
             return None
 
         if conn and conn.min_travel_time_s and delta_seconds < conn.min_travel_time_s:
-            speed_kmh = (conn.distance_m / max(1.0, delta_seconds)) * 3.6 if conn.distance_m else 0.0
+            speed_kmh = (
+                (conn.distance_m / max(1.0, delta_seconds)) * 3.6 if conn.distance_m else 0.0
+            )
 
-            alert_code = f"ALT-TIM-{p_to.timestamp.strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
+            alert_code = (
+                f"ALT-TIM-{p_to.timestamp.strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
+            )
             title = "Travel Time Anomaly Detected"
             desc = (
                 f"Vehicle transit duration of {delta_seconds:.0f}s is significantly below the minimum "

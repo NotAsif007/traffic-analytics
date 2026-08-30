@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.core.exceptions import ConflictError, NotFoundError
-from app.schemas.road import RoadCreate, RoadUpdate
+from app.schemas.road import RoadCreate
 from app.services.road import RoadService
 
 

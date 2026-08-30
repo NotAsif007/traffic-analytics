@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import Field
 
@@ -14,20 +14,22 @@ from app.schemas.vehicle_observation import BoundingBox
 
 class TrackPointData(AppBaseModel):
     """Data representation of a single track point state."""
+
     timestamp: datetime
-    frame_number: Optional[int] = None
+    frame_number: int | None = None
     bbox: BoundingBox
     confidence: float = Field(..., ge=0.0, le=1.0)
-    plate_text: Optional[str] = None
-    plate_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    estimated_speed_kmh: Optional[float] = None
-    observation_id: Optional[uuid.UUID] = None
+    plate_text: str | None = None
+    plate_confidence: float | None = Field(None, ge=0.0, le=1.0)
+    estimated_speed_kmh: float | None = None
+    observation_id: uuid.UUID | None = None
 
 
 class TrackState(AppBaseModel):
     """
     Current live state of an active or completed single-camera track.
     """
+
     track_id: str = Field(..., description="Local tracker ID within this camera stream")
     camera_id: uuid.UUID
     start_time: datetime
@@ -38,12 +40,12 @@ class TrackState(AppBaseModel):
     time_since_update: int = Field(default=0, description="Frames since last detection")
     bbox: BoundingBox
     confidence: float = Field(..., ge=0.0, le=1.0)
-    vehicle_class: Optional[str] = None
-    vehicle_color: Optional[str] = None
-    best_plate_text: Optional[str] = None
-    best_plate_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+    vehicle_class: str | None = None
+    vehicle_color: str | None = None
+    best_plate_text: str | None = None
+    best_plate_confidence: float | None = Field(None, ge=0.0, le=1.0)
     points: list[TrackPointData] = Field(default_factory=list)
-    metadata_: Optional[dict[str, Any]] = Field(default=None, alias="metadata")
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
 
 
 def calculate_iou(box_a: BoundingBox, box_b: BoundingBox) -> float:

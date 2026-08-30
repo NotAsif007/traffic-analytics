@@ -10,29 +10,30 @@ Design principles:
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from pydantic import Field
 
 from app.schemas.common import AppBaseModel
 
-
 # ---------------------------------------------------------------------------
 # Transformation Audit Record
 # ---------------------------------------------------------------------------
 
+
 class TransformationStep(AppBaseModel):
     """Record of a specific text transformation applied during normalization."""
+
     rule: str = Field(..., description="Name of the transformation rule applied")
     before: str
     after: str
-    details: Optional[str] = None
+    details: str | None = None
 
 
 class NormalizedPlate(AppBaseModel):
     """
     Traceable result of plate text normalization.
     """
+
     raw_text: str = Field(..., description="Original raw text from OCR")
     normalized_text: str = Field(..., description="Cleaned, standardized plate text")
     raw_confidence: float = Field(..., ge=0.0, le=1.0)
@@ -65,6 +66,7 @@ DEFAULT_CONFUSION_MAP: dict[str, str] = {
 # OCR Normalizer
 # ---------------------------------------------------------------------------
 
+
 class OCRNormalizer:
     """
     Configurable, deterministic normalizer for ANPR plate strings.
@@ -81,7 +83,7 @@ class OCRNormalizer:
         strip_separators: bool = True,
         to_uppercase: bool = True,
         enable_confusion_mapping: bool = False,
-        confusion_map: Optional[dict[str, str]] = None,
+        confusion_map: dict[str, str] | None = None,
         confusion_penalty: float = 0.05,
     ) -> None:
         self.strip_separators = strip_separators

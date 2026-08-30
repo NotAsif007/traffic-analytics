@@ -2,18 +2,13 @@
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.events.contracts import DomainEvent, EventProcessingResult, EventType
+from app.events.contracts import DomainEvent, EventType
 from app.events.interfaces import EventBus
-from app.models.camera_connection import CameraConnection
-from app.models.trajectory import Trajectory
-from app.models.vehicle_observation import VehicleObservation
 from app.schemas.vehicle_observation import VehicleObservationCreate
 from app.services.alert import AlertService
 from app.services.trajectory import TrajectoryService
@@ -42,9 +37,7 @@ class EventCoordinator:
         self._trajectory_service = TrajectoryService(session)
         self._alert_service = AlertService(session)
 
-    async def handle_vehicle_observed(
-        self, payload: VehicleObservationCreate
-    ) -> dict[str, Any]:
+    async def handle_vehicle_observed(self, payload: VehicleObservationCreate) -> dict[str, Any]:
         """
         Full real-time event pipeline handler for an incoming vehicle sighting.
         """
@@ -71,7 +64,11 @@ class EventCoordinator:
                     DomainEvent(
                         event_type=EventType.ALERT_CREATED.value,
                         source="alert-engine",
-                        payload={"alert_id": str(alert.id), "alert_code": alert.alert_code, "type": alert.alert_type},
+                        payload={
+                            "alert_id": str(alert.id),
+                            "alert_code": alert.alert_code,
+                            "type": alert.alert_type,
+                        },
                     )
                 )
 
@@ -96,7 +93,9 @@ class EventCoordinator:
                     traj = await self._trajectory_service.append_observation(active_traj, obs_model)
                 except Exception as e:
                     logger.warning("trajectory.append_failed_starting_new", error=str(e))
-                    traj = await self._trajectory_service.start_trajectory(identity_resp.id, obs_model)
+                    traj = await self._trajectory_service.start_trajectory(
+                        identity_resp.id, obs_model
+                    )
             else:
                 traj = await self._trajectory_service.start_trajectory(identity_resp.id, obs_model)
 

@@ -136,16 +136,12 @@ def upgrade() -> None:
             "sequence_order >= 1",
             name="ck_trajectory_points_sequence_order",
         ),
-        sa.ForeignKeyConstraint(
-            ["trajectory_id"], ["trajectories.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["trajectory_id"], ["trajectories.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["camera_id"], ["cameras.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(
             ["observation_id"], ["vehicle_observations.id"], ondelete="SET NULL"
         ),
-        sa.ForeignKeyConstraint(
-            ["track_id"], ["vehicle_tracks.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["track_id"], ["vehicle_tracks.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
 

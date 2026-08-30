@@ -14,9 +14,7 @@ def _utcnow_iso() -> str:
 
 
 async def _create_camera(client: AsyncClient, camera_id: str, name: str) -> dict:
-    r = await client.post(
-        "/api/v1/cameras/", json={"camera_id": camera_id, "name": name}
-    )
+    r = await client.post("/api/v1/cameras/", json={"camera_id": camera_id, "name": name})
     assert r.status_code == 201, r.json()
     return r.json()
 

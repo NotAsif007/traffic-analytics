@@ -66,7 +66,9 @@ def test_track_creation_single_vehicle() -> None:
     tracker = IoUSingleCameraTracker(iou_threshold=0.3)
     t0 = datetime(2026, 8, 30, 10, 0, 0, tzinfo=timezone.utc)
 
-    det = _make_obs(CAMERA_A, t0, BoundingBox(x1=0.1, y1=0.1, x2=0.4, y2=0.4), plate_text="KA01AB1234")
+    det = _make_obs(
+        CAMERA_A, t0, BoundingBox(x1=0.1, y1=0.1, x2=0.4, y2=0.4), plate_text="KA01AB1234"
+    )
     tracks = tracker.update(CAMERA_A, t0, [det], frame_number=1)
 
     assert len(tracks) == 1
@@ -86,8 +88,20 @@ def test_track_update_consecutive_frames() -> None:
     t0 = datetime(2026, 8, 30, 10, 0, 0, tzinfo=timezone.utc)
     t1 = t0 + timedelta(seconds=1)
 
-    det1 = _make_obs(CAMERA_A, t0, BoundingBox(x1=0.1, y1=0.1, x2=0.4, y2=0.4), plate_text="KA01", plate_confidence=0.70)
-    det2 = _make_obs(CAMERA_A, t1, BoundingBox(x1=0.12, y1=0.12, x2=0.42, y2=0.42), plate_text="KA01AB1234", plate_confidence=0.95)
+    det1 = _make_obs(
+        CAMERA_A,
+        t0,
+        BoundingBox(x1=0.1, y1=0.1, x2=0.4, y2=0.4),
+        plate_text="KA01",
+        plate_confidence=0.70,
+    )
+    det2 = _make_obs(
+        CAMERA_A,
+        t1,
+        BoundingBox(x1=0.12, y1=0.12, x2=0.42, y2=0.42),
+        plate_text="KA01AB1234",
+        plate_confidence=0.95,
+    )
 
     tracker.update(CAMERA_A, t0, [det1], frame_number=1)
     tracks = tracker.update(CAMERA_A, t1, [det2], frame_number=2)
@@ -111,11 +125,19 @@ def test_multiple_simultaneous_vehicles() -> None:
     t1 = t0 + timedelta(seconds=1)
 
     # Vehicle 1 on left lane, Vehicle 2 on right lane
-    v1_f1 = _make_obs(CAMERA_A, t0, BoundingBox(x1=0.1, y1=0.2, x2=0.3, y2=0.5), vehicle_class="car")
-    v2_f1 = _make_obs(CAMERA_A, t0, BoundingBox(x1=0.6, y1=0.2, x2=0.8, y2=0.5), vehicle_class="truck")
+    v1_f1 = _make_obs(
+        CAMERA_A, t0, BoundingBox(x1=0.1, y1=0.2, x2=0.3, y2=0.5), vehicle_class="car"
+    )
+    v2_f1 = _make_obs(
+        CAMERA_A, t0, BoundingBox(x1=0.6, y1=0.2, x2=0.8, y2=0.5), vehicle_class="truck"
+    )
 
-    v1_f2 = _make_obs(CAMERA_A, t1, BoundingBox(x1=0.12, y1=0.22, x2=0.32, y2=0.52), vehicle_class="car")
-    v2_f2 = _make_obs(CAMERA_A, t1, BoundingBox(x1=0.62, y1=0.22, x2=0.82, y2=0.52), vehicle_class="truck")
+    v1_f2 = _make_obs(
+        CAMERA_A, t1, BoundingBox(x1=0.12, y1=0.22, x2=0.32, y2=0.52), vehicle_class="car"
+    )
+    v2_f2 = _make_obs(
+        CAMERA_A, t1, BoundingBox(x1=0.62, y1=0.22, x2=0.82, y2=0.52), vehicle_class="truck"
+    )
 
     tracks_f1 = tracker.update(CAMERA_A, t0, [v1_f1, v2_f1], frame_number=1)
     assert len(tracks_f1) == 2

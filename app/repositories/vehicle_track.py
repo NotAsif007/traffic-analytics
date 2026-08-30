@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +19,7 @@ class VehicleTrackRepository(BaseRepository[VehicleTrack]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def get_with_points(self, track_id: uuid.UUID) -> Optional[VehicleTrack]:
+    async def get_with_points(self, track_id: uuid.UUID) -> VehicleTrack | None:
         """Fetch a vehicle track including all its track points ordered by timestamp."""
         result = await self._session.execute(
             select(VehicleTrack)
@@ -62,26 +61,28 @@ class VehicleTrackRepository(BaseRepository[VehicleTrack]):
 
         total = (await self._session.execute(count_query)).scalar_one()
         rows = (
-            await self._session.execute(
-                query.order_by(VehicleTrack.start_time.desc()).offset(offset).limit(limit)
+            (
+                await self._session.execute(
+                    query.order_by(VehicleTrack.start_time.desc()).offset(offset).limit(limit)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows), total
 
     async def get_by_camera(
         self,
         camera_id: uuid.UUID,
         *,
-        status: Optional[str] = None,
+        status: str | None = None,
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[VehicleTrack], int]:
         filters = TrackFilters(camera_id=camera_id, status=status)
         return await self.list_tracks(filters=filters, offset=offset, limit=limit)
 
-    async def get_track_observations(
-        self, track_id: uuid.UUID
-    ) -> list[TrackPoint]:
+    async def get_track_observations(self, track_id: uuid.UUID) -> list[TrackPoint]:
         """Get all track points for a track in chronological order."""
         result = await self._session.execute(
             select(TrackPoint)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -18,29 +18,30 @@ VALID_TRACK_STATUSES = {"active", "completed", "lost", "terminated"}
 # TrackPoint Schemas
 # ---------------------------------------------------------------------------
 
+
 class TrackPointBase(AppBaseModel):
     timestamp: datetime = Field(..., description="Timestamp of the track point (timezone-aware)")
-    frame_number: Optional[int] = Field(None, ge=0)
-    bounding_box: Optional[BoundingBox] = Field(
+    frame_number: int | None = Field(None, ge=0)
+    bounding_box: BoundingBox | None = Field(
         None, description="Vehicle bounding box in normalised coordinates {x1,y1,x2,y2}"
     )
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    estimated_speed_kmh: Optional[float] = Field(None, ge=0.0, le=500.0)
-    plate_text: Optional[str] = Field(None, max_length=20)
-    plate_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    metadata_: Optional[dict[str, Any]] = Field(default=None, alias="metadata")
+    estimated_speed_kmh: float | None = Field(None, ge=0.0, le=500.0)
+    plate_text: str | None = Field(None, max_length=20)
+    plate_confidence: float | None = Field(None, ge=0.0, le=1.0)
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
 
 
 class TrackPointCreate(TrackPointBase):
     camera_id: uuid.UUID
-    observation_id: Optional[uuid.UUID] = None
+    observation_id: uuid.UUID | None = None
 
 
 class TrackPointResponse(TrackPointBase):
     id: uuid.UUID
     track_id: uuid.UUID
     camera_id: uuid.UUID
-    observation_id: Optional[uuid.UUID] = None
+    observation_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -51,6 +52,7 @@ class TrackPointResponse(TrackPointBase):
 # VehicleTrack Schemas
 # ---------------------------------------------------------------------------
 
+
 class VehicleTrackBase(AppBaseModel):
     track_id: str = Field(..., min_length=1, max_length=64, examples=["TRK-CAM01-001"])
     camera_id: uuid.UUID
@@ -58,13 +60,13 @@ class VehicleTrackBase(AppBaseModel):
     end_time: datetime
     status: str = Field(default="active", examples=["active", "completed", "lost", "terminated"])
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    vehicle_class: Optional[str] = Field(None, max_length=64, examples=["car", "truck", "motorcycle"])
-    vehicle_color: Optional[str] = Field(None, max_length=32, examples=["white", "black"])
-    best_plate_text: Optional[str] = Field(None, max_length=20, examples=["KA01AB1234"])
-    best_plate_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+    vehicle_class: str | None = Field(None, max_length=64, examples=["car", "truck", "motorcycle"])
+    vehicle_color: str | None = Field(None, max_length=32, examples=["white", "black"])
+    best_plate_text: str | None = Field(None, max_length=20, examples=["KA01AB1234"])
+    best_plate_confidence: float | None = Field(None, ge=0.0, le=1.0)
     points_count: int = Field(default=0, ge=0)
-    notes: Optional[str] = None
-    metadata_: Optional[dict[str, Any]] = Field(default=None, alias="metadata")
+    notes: str | None = None
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
 
     @field_validator("status")
     @classmethod
@@ -85,20 +87,20 @@ class VehicleTrackCreate(VehicleTrackBase):
 
 
 class VehicleTrackUpdate(AppBaseModel):
-    status: Optional[str] = None
-    end_time: Optional[datetime] = None
-    confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    vehicle_class: Optional[str] = None
-    vehicle_color: Optional[str] = None
-    best_plate_text: Optional[str] = None
-    best_plate_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    points_count: Optional[int] = Field(None, ge=0)
-    notes: Optional[str] = None
-    metadata_: Optional[dict[str, Any]] = Field(default=None, alias="metadata")
+    status: str | None = None
+    end_time: datetime | None = None
+    confidence: float | None = Field(None, ge=0.0, le=1.0)
+    vehicle_class: str | None = None
+    vehicle_color: str | None = None
+    best_plate_text: str | None = None
+    best_plate_confidence: float | None = Field(None, ge=0.0, le=1.0)
+    points_count: int | None = Field(None, ge=0)
+    notes: str | None = None
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
 
     @field_validator("status")
     @classmethod
-    def validate_status(cls, v: Optional[str]) -> Optional[str]:
+    def validate_status(cls, v: str | None) -> str | None:
         if v is not None and v not in VALID_TRACK_STATUSES:
             raise ValueError(f"status must be one of: {', '.join(sorted(VALID_TRACK_STATUSES))}")
         return v
@@ -114,6 +116,7 @@ class VehicleTrackResponse(VehicleTrackBase):
 
 class VehicleTrackDetailResponse(VehicleTrackResponse):
     """Detailed track response including full chronological track points."""
+
     track_points: list[TrackPointResponse] = Field(default_factory=list)
 
 
@@ -121,11 +124,12 @@ class VehicleTrackDetailResponse(VehicleTrackResponse):
 # Filter schema for list endpoint
 # ---------------------------------------------------------------------------
 
+
 class TrackFilters(AppBaseModel):
-    camera_id: Optional[uuid.UUID] = None
-    status: Optional[str] = None
-    vehicle_class: Optional[str] = None
-    plate_text: Optional[str] = None
-    min_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    start_after: Optional[datetime] = None
-    end_before: Optional[datetime] = None
+    camera_id: uuid.UUID | None = None
+    status: str | None = None
+    vehicle_class: str | None = None
+    plate_text: str | None = None
+    min_confidence: float | None = Field(None, ge=0.0, le=1.0)
+    start_after: datetime | None = None
+    end_before: datetime | None = None

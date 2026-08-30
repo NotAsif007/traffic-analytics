@@ -8,10 +8,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.core.exceptions import NotFoundError, ValidationError
+from app.core.exceptions import ValidationError
 from app.models.trajectory import Trajectory, TrajectoryPoint
 from app.models.vehicle_observation import VehicleObservation
-from app.schemas.trajectory import TrajectoryFilters
 from app.services.trajectory import TrajectoryService
 
 VID_ID = uuid.uuid4()
@@ -58,7 +57,9 @@ def sample_camera_6() -> MagicMock:
     return cam
 
 
-def _make_obs(cam_id: uuid.UUID, timestamp: datetime, plate: str | None = "AS01AB1234") -> VehicleObservation:
+def _make_obs(
+    cam_id: uuid.UUID, timestamp: datetime, plate: str | None = "AS01AB1234"
+) -> VehicleObservation:
     obs = MagicMock(spec=VehicleObservation)
     obs.id = uuid.uuid4()
     obs.camera_id = cam_id

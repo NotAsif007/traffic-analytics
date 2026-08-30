@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -85,6 +83,7 @@ async def test_failed_processing_records_in_dead_letter(
     event_bus: InMemoryEventBus, dead_letter_store: InMemoryDeadLetterStore
 ) -> None:
     """Unhandled handler exceptions are caught and stored in DeadLetterStore."""
+
     async def _failing_handler(event: DomainEvent) -> None:
         raise ValueError("Simulated database connection failure")
 

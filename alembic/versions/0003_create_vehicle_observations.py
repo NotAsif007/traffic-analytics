@@ -26,51 +26,40 @@ def upgrade() -> None:
     op.create_table(
         "vehicle_observations",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-
         # Source / idempotency
         sa.Column("source", sa.String(64), nullable=False),
         sa.Column("source_observation_id", sa.String(128), nullable=False),
-
         # Camera
         sa.Column("camera_id", postgresql.UUID(as_uuid=True), nullable=False),
-
         # Temporal
         sa.Column("observed_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("frame_number", sa.Integer(), nullable=True),
-
         # Vehicle detection
         sa.Column("vehicle_class", sa.String(64), nullable=True),
         sa.Column("vehicle_color", sa.String(32), nullable=True),
         sa.Column("bounding_box", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column("detection_confidence", sa.Numeric(5, 4), nullable=True),
-
         # Plate reading
         sa.Column("plate_text", sa.String(20), nullable=True),
         sa.Column("plate_confidence", sa.Numeric(5, 4), nullable=True),
         sa.Column("plate_bbox", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column("plate_region", sa.String(16), nullable=True),
-
         # Media references
         sa.Column("frame_path", sa.String(512), nullable=True),
         sa.Column("crop_path", sa.String(512), nullable=True),
         sa.Column("plate_crop_path", sa.String(512), nullable=True),
-
         # Embedding reference
         sa.Column("embedding_id", sa.String(128), nullable=True),
         sa.Column("embedding_model", sa.String(64), nullable=True),
-
         # Kinematics
         sa.Column("estimated_speed_kmh", sa.Numeric(6, 2), nullable=True),
         sa.Column("direction", sa.String(32), nullable=True),
         sa.Column("lane", sa.Integer(), nullable=True),
-
         # Lifecycle
         sa.Column("status", sa.String(32), nullable=False, server_default="detected"),
         sa.Column("rejection_reason", sa.Text(), nullable=True),
-
         # Metadata
         sa.Column("metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-
         # Audit timestamps
         sa.Column(
             "created_at",
@@ -84,7 +73,6 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # Constraints
         sa.CheckConstraint(
             "detection_confidence IS NULL OR (detection_confidence >= 0 AND detection_confidence <= 1)",
@@ -102,7 +90,6 @@ def upgrade() -> None:
             "estimated_speed_kmh IS NULL OR estimated_speed_kmh >= 0",
             name="ck_vehicle_obs_speed_positive",
         ),
-
         sa.ForeignKeyConstraint(["camera_id"], ["cameras.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
     )

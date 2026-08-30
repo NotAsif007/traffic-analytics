@@ -29,9 +29,7 @@ class Camera(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "cameras"
 
     # Human-readable identifier (e.g. "CAM-001", "Junction-MG-Road")
-    camera_id: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, index=True
-    )
+    camera_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -73,17 +71,13 @@ class Camera(UUIDMixin, TimestampMixin, Base):
     )
 
     # IANA timezone string for the camera's local time (e.g. "Asia/Kolkata")
-    timezone: Mapped[str] = mapped_column(
-        String(64), nullable=False, default="Asia/Kolkata"
-    )
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="Asia/Kolkata")
 
     # Mounting height in metres
     height_m: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Free-form metadata (model, IP, stream URL template, etc.)
-    metadata_: Mapped[dict | None] = mapped_column(
-        "metadata", JSONB, nullable=True
-    )
+    metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -103,9 +97,7 @@ class Camera(UUIDMixin, TimestampMixin, Base):
         lazy="select",
     )
 
-    __table_args__ = (
-        Index("ix_cameras_location", "location", postgresql_using="gist"),
-    )
+    __table_args__ = (Index("ix_cameras_location", "location", postgresql_using="gist"),)
 
     def __repr__(self) -> str:
         return f"<Camera id={self.id} camera_id={self.camera_id!r} status={self.status!r}>"

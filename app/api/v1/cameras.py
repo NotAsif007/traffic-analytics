@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import DBSession
-from app.schemas.camera import CameraCreate, CameraResponse, CameraUpdate
+from app.schemas.camera import CameraCreate, CameraResponse
 from app.schemas.common import PaginatedResponse
+from app.schemas.vehicle_track import VehicleTrackResponse
 from app.services.camera import CameraService
+from app.services.vehicle_track import VehicleTrackService
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 
@@ -19,7 +21,12 @@ def _camera_service(db: DBSession) -> CameraService:
     return CameraService(db)
 
 
+def _vehicle_track_service(db: DBSession) -> VehicleTrackService:
+    return VehicleTrackService(db)
+
+
 CameraServiceDep = Annotated[CameraService, Depends(_camera_service)]
+VehicleTrackServiceDep = Annotated[VehicleTrackService, Depends(_vehicle_track_service)]
 
 
 @router.post("/", response_model=CameraResponse, status_code=status.HTTP_201_CREATED)
@@ -33,11 +40,11 @@ async def list_cameras(
     svc: CameraServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    status: Optional[str] = Query(
+    status: str | None = Query(
         None, description="Filter by status: active | inactive | maintenance | fault"
     ),
-    road_id: Optional[uuid.UUID] = Query(None, description="Filter by road UUID"),
-    direction: Optional[str] = Query(None, description="Filter by direction heading"),
+    road_id: uuid.UUID | None = Query(None, description="Filter by road UUID"),
+    direction: str | None = Query(None, description="Filter by direction heading"),
 ) -> PaginatedResponse[CameraResponse]:
     """List cameras with optional filters."""
     return await svc.list_cameras(
@@ -67,24 +74,6 @@ async def get_camera(camera_id: uuid.UUID, svc: CameraServiceDep) -> CameraRespo
 
 
 @router.patch("/{camera_id}", response_model=CameraResponse)
-async def update_camera(
-    camera_id: uuid.UUID, payload: CameraUpdate, svc: CameraServiceDep
-) -> CameraResponse:
-    """Partially update a camera."""
-    return await svc.update_camera(camera_id, payload)
-
-
-from app.schemas.vehicle_track import VehicleTrackResponse
-from app.services.vehicle_track import VehicleTrackService
-
-
-def _vehicle_track_service(db: DBSession) -> VehicleTrackService:
-    return VehicleTrackService(db)
-
-
-VehicleTrackServiceDep = Annotated[VehicleTrackService, Depends(_vehicle_track_service)]
-
-
 @router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_camera(camera_id: uuid.UUID, svc: CameraServiceDep) -> None:
     """Delete a camera (its connections will be cascade-deleted)."""
@@ -97,7 +86,7 @@ async def list_camera_tracks(
     track_svc: VehicleTrackServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    status: Optional[str] = Query(None, description="Filter by track status"),
+    status: str | None = Query(None, description="Filter by track status"),
 ) -> PaginatedResponse[VehicleTrackResponse]:
     """Retrieve all vehicle tracks captured by a specific camera."""
     return await track_svc.list_camera_tracks(

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 from app.anpr.matcher import PlateMatcher
 from app.association.contracts import MatchSignalScores, ScoringWeights, SightingContext
@@ -16,8 +15,8 @@ class AssociationScorer:
 
     def __init__(
         self,
-        plate_matcher: Optional[PlateMatcher] = None,
-        weights: Optional[ScoringWeights] = None,
+        plate_matcher: PlateMatcher | None = None,
+        weights: ScoringWeights | None = None,
     ) -> None:
         self.plate_matcher = plate_matcher or PlateMatcher()
         self.weights = weights or ScoringWeights()
@@ -56,9 +55,8 @@ class AssociationScorer:
         tgt: SightingContext,
     ) -> float:
         """Evaluate visual appearance and re-ID embedding compatibility."""
-        if src.embedding_id and tgt.embedding_id:
-            if src.embedding_id == tgt.embedding_id:
-                return 1.0
+        if src.embedding_id and tgt.embedding_id and src.embedding_id == tgt.embedding_id:
+            return 1.0
 
         # Fallback to color and class compatibility
         color_score = self.evaluate_color_signal(src, tgt)
@@ -68,9 +66,9 @@ class AssociationScorer:
     def evaluate_temporal_signal(
         self,
         delta_seconds: float,
-        min_travel_s: Optional[int] = None,
-        max_travel_s: Optional[int] = None,
-        avg_travel_s: Optional[int] = None,
+        min_travel_s: int | None = None,
+        max_travel_s: int | None = None,
+        avg_travel_s: int | None = None,
     ) -> float:
         """
         Evaluate temporal plausibility of movement from source to target camera.
@@ -84,7 +82,7 @@ class AssociationScorer:
                 # Vehicle appeared impossibly fast (exceeded physical speed limit)
                 # Severe exponential penalty
                 ratio = delta_seconds / max(1, min_travel_s)
-                return round(max(0.0, ratio ** 3), 4)
+                return round(max(0.0, ratio**3), 4)
 
             if min_travel_s <= delta_seconds <= max_travel_s:
                 # Perfectly plausible window
@@ -188,9 +186,9 @@ class AssociationScorer:
         tgt: SightingContext,
         delta_seconds: float,
         has_direct_connection: bool = False,
-        min_travel_s: Optional[int] = None,
-        max_travel_s: Optional[int] = None,
-        avg_travel_s: Optional[int] = None,
+        min_travel_s: int | None = None,
+        max_travel_s: int | None = None,
+        avg_travel_s: int | None = None,
     ) -> MatchSignalScores:
         """Compute all signal scores between two sightings."""
         is_same_cam = src.camera_id == tgt.camera_id
@@ -210,7 +208,7 @@ class AssociationScorer:
     def calculate_composite_score(
         self,
         signals: MatchSignalScores,
-        weights: Optional[ScoringWeights] = None,
+        weights: ScoringWeights | None = None,
     ) -> float:
         """
         Calculate weighted composite match score in [0.0, 1.0].

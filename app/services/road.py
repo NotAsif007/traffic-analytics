@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import uuid
-from typing import Any, Optional
+from typing import Any
 
-from geoalchemy2.shape import from_shape, to_shape
-from shapely.geometry import LineString, mapping, shape
+from geoalchemy2.shape import to_shape
+from shapely.geometry import mapping, shape
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
@@ -20,7 +19,7 @@ from app.schemas.road import GeoJSONGeometry, RoadCreate, RoadResponse, RoadUpda
 logger = get_logger(__name__)
 
 
-def _geometry_to_geojson(geom: Any) -> Optional[GeoJSONGeometry]:
+def _geometry_to_geojson(geom: Any) -> GeoJSONGeometry | None:
     """Convert a GeoAlchemy2 geometry value to a GeoJSON dict."""
     if geom is None:
         return None
@@ -32,7 +31,7 @@ def _geometry_to_geojson(geom: Any) -> Optional[GeoJSONGeometry]:
         return None
 
 
-def _geojson_to_wkt(geojson: Optional[GeoJSONGeometry]) -> Optional[str]:
+def _geojson_to_wkt(geojson: GeoJSONGeometry | None) -> str | None:
     """Convert a GeoJSONGeometry schema to a WKT string with SRID."""
     if geojson is None:
         return None
@@ -95,8 +94,8 @@ class RoadService:
         *,
         page: int = 1,
         page_size: int = 20,
-        road_type: Optional[str] = None,
-        direction: Optional[str] = None,
+        road_type: str | None = None,
+        direction: str | None = None,
     ) -> PaginatedResponse[RoadResponse]:
         offset = (page - 1) * page_size
         roads, total = await self._repo.list_roads(
@@ -111,8 +110,15 @@ class RoadService:
             raise NotFoundError("Road", road_id)
 
         updates: dict[str, Any] = {}
-        for field in ("name", "external_id", "road_type", "direction",
-                      "speed_limit_kmh", "lane_count", "description"):
+        for field in (
+            "name",
+            "external_id",
+            "road_type",
+            "direction",
+            "speed_limit_kmh",
+            "lane_count",
+            "description",
+        ):
             val = getattr(payload, field, None)
             if val is not None:
                 updates[field] = val

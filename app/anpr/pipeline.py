@@ -6,12 +6,8 @@ Frame -> Vehicle Detection -> Plate Detection -> Plate OCR -> Normalization -> V
 
 from __future__ import annotations
 
-import uuid
-from typing import Optional
-
 from app.anpr.contracts import (
     FrameInput,
-    ObservationCandidate,
 )
 from app.anpr.interfaces import PlateDetector, PlateOCR, VehicleDetector
 from app.anpr.matcher import propagate_observation_confidence
@@ -35,7 +31,7 @@ class ANPRPipeline:
         vehicle_detector: VehicleDetector,
         plate_detector: PlateDetector,
         plate_ocr: PlateOCR,
-        normalizer: Optional[OCRNormalizer] = None,
+        normalizer: OCRNormalizer | None = None,
         source_name: str = "anpr-pipeline-v1",
     ) -> None:
         self.vehicle_detector = vehicle_detector
@@ -85,9 +81,7 @@ class ANPRPipeline:
             )
 
             # Step 5: Build unique source observation ID
-            obs_tag = (
-                f"{frame.camera_id}_{frame.observed_at.strftime('%Y%m%d%H%M%S%f')}_{idx}"
-            )
+            obs_tag = f"{frame.camera_id}_{frame.observed_at.strftime('%Y%m%d%H%M%S%f')}_{idx}"
 
             # Step 6: Construct normalized domain payload
             obs_payload = VehicleObservationCreate(
@@ -100,7 +94,9 @@ class ANPRPipeline:
                 vehicle_color=v_det.vehicle_color,
                 bounding_box=v_det.bbox,
                 detection_confidence=v_det.confidence,
-                plate_text=normalized_plate if normalized_plate else (ocr_res.raw_text if ocr_res else None),
+                plate_text=normalized_plate
+                if normalized_plate
+                else (ocr_res.raw_text if ocr_res else None),
                 plate_confidence=ocr_res.confidence if ocr_res else None,
                 plate_bbox=plate_det.bbox if plate_det else None,
                 plate_region=plate_det.plate_region if plate_det else None,

@@ -138,7 +138,10 @@ CAMERAS = [
         "status": "active",
         "location": {"type": "Point", "coordinates": [77.5800, 12.9750]},
         "height_m": 8,
-        "metadata": {"stream_url": "rtsp://10.0.1.1:554/cam-mg-w", "model": "Hikvision DS-2CD2085G1"},
+        "metadata": {
+            "stream_url": "rtsp://10.0.1.1:554/cam-mg-w",
+            "model": "Hikvision DS-2CD2085G1",
+        },
     },
     {
         "camera_id": "CAM-MG-C1",
@@ -231,35 +234,36 @@ CAMERAS = [
 # Format: (source_camera_id, dest_camera_id, min_s, max_s, avg_s, dist_m, type)
 CONNECTIONS = [
     # MG Road eastbound progression
-    ("CAM-MG-W",  "CAM-MG-C1", 60,  180, 90,  850.0, "direct"),
-    ("CAM-MG-C1", "CAM-MG-C2", 60,  180, 90,  900.0, "direct"),
-    ("CAM-MG-C2", "CAM-MG-E",  60,  180, 90,  950.0, "direct"),
+    ("CAM-MG-W", "CAM-MG-C1", 60, 180, 90, 850.0, "direct"),
+    ("CAM-MG-C1", "CAM-MG-C2", 60, 180, 90, 900.0, "direct"),
+    ("CAM-MG-C2", "CAM-MG-E", 60, 180, 90, 950.0, "direct"),
     # MG Road westbound progression
-    ("CAM-MG-E",  "CAM-MG-C2", 60,  180, 90,  950.0, "direct"),
-    ("CAM-MG-C2", "CAM-MG-C1", 60,  180, 90,  900.0, "direct"),
-    ("CAM-MG-C1", "CAM-MG-W",  60,  180, 90,  850.0, "direct"),
+    ("CAM-MG-E", "CAM-MG-C2", 60, 180, 90, 950.0, "direct"),
+    ("CAM-MG-C2", "CAM-MG-C1", 60, 180, 90, 900.0, "direct"),
+    ("CAM-MG-C1", "CAM-MG-W", 60, 180, 90, 850.0, "direct"),
     # MG Road → Residency Road (turning north at CAM-MG-C1)
-    ("CAM-MG-C1", "CAM-RES-N", 90,  300, 150, 1200.0, "via_junction"),
+    ("CAM-MG-C1", "CAM-RES-N", 90, 300, 150, 1200.0, "via_junction"),
     # MG Road → Brigade Road (turning north at CAM-MG-C2)
-    ("CAM-MG-C2", "CAM-BRG-N", 90,  300, 150, 1100.0, "via_junction"),
+    ("CAM-MG-C2", "CAM-BRG-N", 90, 300, 150, 1100.0, "via_junction"),
     # Residency Road → Ring Road North
     ("CAM-RES-N", "CAM-RING-W", 120, 360, 180, 1500.0, "direct"),
     # Brigade Road → Ring Road North (Industrial junction)
-    ("CAM-BRG-N", "CAM-IND-N",  90,  300, 150, 1300.0, "via_junction"),
+    ("CAM-BRG-N", "CAM-IND-N", 90, 300, 150, 1300.0, "via_junction"),
     # Industrial Link → Ring Road
-    ("CAM-IND-N", "CAM-RING-W", 90,  300, 150, 1800.0, "via_junction"),
+    ("CAM-IND-N", "CAM-RING-W", 90, 300, 150, 1800.0, "via_junction"),
     # Ring Road eastbound → Industrial area
     ("CAM-RING-W", "CAM-IND-N", 120, 360, 180, 2200.0, "direct"),
     # Cross connection: MG Road East to Industrial via link road
-    ("CAM-MG-E",  "CAM-IND-N",  60,  180, 90,  600.0, "direct"),
+    ("CAM-MG-E", "CAM-IND-N", 60, 180, 90, 600.0, "direct"),
     # Return: Industrial back to MG Road East
-    ("CAM-IND-N", "CAM-MG-E",   60,  180, 90,  600.0, "direct"),
+    ("CAM-IND-N", "CAM-MG-E", 60, 180, 90, 600.0, "direct"),
 ]
 
 
 # ---------------------------------------------------------------------------
 # Seed runner
 # ---------------------------------------------------------------------------
+
 
 async def seed() -> None:
     engine = create_async_engine(DATABASE_URL, echo=False)
@@ -278,9 +282,7 @@ async def seed() -> None:
 
         for rd in ROADS:
             existing = (
-                await session.execute(
-                    sa.select(Road).where(Road.external_id == rd["external_id"])
-                )
+                await session.execute(sa.select(Road).where(Road.external_id == rd["external_id"]))
             ).scalar_one_or_none()
 
             if existing:
@@ -294,6 +296,7 @@ async def seed() -> None:
             geom_wkt = None
             if geom_raw:
                 from shapely.geometry import shape
+
                 geom_wkt = f"SRID=4326;{shape(geom_raw).wkt}"
 
             road = Road(**{k: v for k, v in rd.items() if k != "road_key"}, geometry=geom_wkt)
@@ -310,9 +313,7 @@ async def seed() -> None:
 
         for cam in CAMERAS:
             existing = (
-                await session.execute(
-                    sa.select(Camera).where(Camera.camera_id == cam["camera_id"])
-                )
+                await session.execute(sa.select(Camera).where(Camera.camera_id == cam["camera_id"]))
             ).scalar_one_or_none()
 
             if existing:
@@ -327,11 +328,12 @@ async def seed() -> None:
             location_wkt = None
             if location_raw:
                 from shapely.geometry import shape
+
                 location_wkt = f"SRID=4326;{shape(location_raw).wkt}"
 
             road_id = road_id_map.get(road_key)
             camera = Camera(
-                **{k: v for k, v in cam.items()},
+                **dict(cam.items()),
                 road_id=road_id,
                 location=location_wkt,
                 metadata_=metadata,

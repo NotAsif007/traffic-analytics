@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,10 +28,6 @@ logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # Mapping helper
-# ---------------------------------------------------------------------------
-
-from datetime import datetime, timezone
-
 def _obs_to_response(obs: VehicleObservation) -> VehicleObservationResponse:
     """Convert ORM instance → response schema."""
     now = datetime.now(timezone.utc)
@@ -100,6 +96,7 @@ def _payload_to_orm(payload: VehicleObservationCreate) -> VehicleObservation:
 # Service
 # ---------------------------------------------------------------------------
 
+
 class VehicleObservationService:
     def __init__(self, session: AsyncSession) -> None:
         self._repo = VehicleObservationRepository(session)
@@ -124,9 +121,7 @@ class VehicleObservationService:
             raise NotFoundError("Camera", payload.camera_id)
 
         # Idempotency check
-        existing = await self._repo.get_by_source(
-            payload.source, payload.source_observation_id
-        )
+        existing = await self._repo.get_by_source(payload.source, payload.source_observation_id)
         if existing:
             raise ConflictError(
                 "VehicleObservation",
@@ -193,9 +188,7 @@ class VehicleObservationService:
     # Bulk ingestion
     # -----------------------------------------------------------------------
 
-    async def bulk_ingest(
-        self, request: BulkObservationRequest
-    ) -> BulkObservationResponse:
+    async def bulk_ingest(self, request: BulkObservationRequest) -> BulkObservationResponse:
         """
         Ingest a batch of observations.
 
@@ -216,7 +209,9 @@ class VehicleObservationService:
         # --- Pre-fetch cameras ---
         camera_ids = {obs.camera_id for obs in observations}
         from sqlalchemy import select as sa_select
+
         from app.models.camera import Camera
+
         cam_result = await self._repo._session.execute(
             sa_select(Camera).where(Camera.id.in_(camera_ids))
         )

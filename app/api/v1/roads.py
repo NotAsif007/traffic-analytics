@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.api.deps import DBSession, get_settings
+from app.api.deps import DBSession
 from app.schemas.common import PaginatedResponse
 from app.schemas.road import RoadCreate, RoadResponse, RoadUpdate
 from app.services.road import RoadService
@@ -33,8 +33,8 @@ async def list_roads(
     svc: RoadServiceDep,
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    road_type: Optional[str] = Query(None, description="Filter by road type"),
-    direction: Optional[str] = Query(
+    road_type: str | None = Query(None, description="Filter by road type"),
+    direction: str | None = Query(
         None, description="Filter by direction (one_way_forward, one_way_reverse, two_way)"
     ),
 ) -> PaginatedResponse[RoadResponse]:
@@ -62,9 +62,7 @@ async def get_road(road_id: uuid.UUID, svc: RoadServiceDep) -> RoadResponse:
 
 
 @router.patch("/{road_id}", response_model=RoadResponse)
-async def update_road(
-    road_id: uuid.UUID, payload: RoadUpdate, svc: RoadServiceDep
-) -> RoadResponse:
+async def update_road(road_id: uuid.UUID, payload: RoadUpdate, svc: RoadServiceDep) -> RoadResponse:
     """Partially update a road."""
     return await svc.update_road(road_id, payload)
 

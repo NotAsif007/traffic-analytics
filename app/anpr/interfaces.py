@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from app.anpr.contracts import (
     FrameInput,
@@ -42,7 +41,7 @@ class PlateDetector(ABC):
         self,
         frame: FrameInput,
         vehicle_detection: VehicleDetectionResult,
-    ) -> Optional[PlateDetectionResult]:
+    ) -> PlateDetectionResult | None:
         """
         Detect and localize license plate within a vehicle detection region.
         Returns None if no plate is detected.
@@ -61,7 +60,7 @@ class PlateOCR(ABC):
     async def recognize_plate(
         self,
         plate_detection: PlateDetectionResult,
-    ) -> Optional[OCRResult]:
+    ) -> OCRResult | None:
         """
         Extract text and character confidences from plate crop.
         Returns None if OCR fails or text cannot be recognized.

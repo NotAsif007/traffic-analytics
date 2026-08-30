@@ -6,7 +6,6 @@ import asyncio
 import traceback
 import uuid
 from collections import defaultdict
-from typing import Optional
 
 from app.core.logging import get_logger
 from app.events.contracts import DeadLetterRecord, DomainEvent, EventProcessingResult
@@ -24,7 +23,7 @@ class InMemoryDeadLetterStore(DeadLetterStore):
         self,
         event: DomainEvent,
         error: Exception,
-        traceback_str: Optional[str] = None,
+        traceback_str: str | None = None,
     ) -> DeadLetterRecord:
         tb = traceback_str or traceback.format_exc()
         record = DeadLetterRecord(
@@ -51,7 +50,7 @@ class InMemoryDeadLetterStore(DeadLetterStore):
         return record
 
     async def list_dead_letters(
-        self, status: Optional[str] = None, limit: int = 50
+        self, status: str | None = None, limit: int = 50
     ) -> list[DeadLetterRecord]:
         records = list(self._records.values())
         if status:
@@ -59,7 +58,7 @@ class InMemoryDeadLetterStore(DeadLetterStore):
         records.sort(key=lambda x: x.last_failed_at, reverse=True)
         return records[:limit]
 
-    async def get_by_id(self, record_id: uuid.UUID) -> Optional[DeadLetterRecord]:
+    async def get_by_id(self, record_id: uuid.UUID) -> DeadLetterRecord | None:
         return self._records.get(record_id)
 
     async def mark_resolved(self, record_id: uuid.UUID) -> None:
@@ -74,7 +73,7 @@ class InMemoryEventBus(EventBus):
 
     def __init__(
         self,
-        dead_letter_store: Optional[DeadLetterStore] = None,
+        dead_letter_store: DeadLetterStore | None = None,
         max_processed_keys: int = 10000,
     ) -> None:
         self._handlers: dict[str, list[EventHandler]] = defaultdict(list)

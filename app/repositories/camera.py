@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from geoalchemy2.functions import ST_DWithin
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.camera import Camera
 from app.repositories.base import BaseRepository
@@ -20,11 +18,9 @@ class CameraRepository(BaseRepository[Camera]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def get_by_camera_id(self, camera_id: str) -> Optional[Camera]:
+    async def get_by_camera_id(self, camera_id: str) -> Camera | None:
         """Look up camera by its human-readable camera_id (e.g. 'CAM-001')."""
-        result = await self._session.execute(
-            select(Camera).where(Camera.camera_id == camera_id)
-        )
+        result = await self._session.execute(select(Camera).where(Camera.camera_id == camera_id))
         return result.scalar_one_or_none()
 
     async def list_cameras(
@@ -32,9 +28,9 @@ class CameraRepository(BaseRepository[Camera]):
         *,
         offset: int = 0,
         limit: int = 20,
-        status: Optional[str] = None,
-        road_id: Optional[uuid.UUID] = None,
-        direction: Optional[str] = None,
+        status: str | None = None,
+        road_id: uuid.UUID | None = None,
+        direction: str | None = None,
     ) -> tuple[list[Camera], int]:
         """List cameras with optional filters."""
         query = select(Camera)

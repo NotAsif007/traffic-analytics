@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,9 +13,8 @@ from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.models.alert import Alert
 from app.models.camera import Camera
-from app.models.camera_connection import CameraConnection
 from app.models.road import Road
-from app.models.trajectory import Trajectory, TrajectoryPoint
+from app.models.trajectory import Trajectory
 from app.models.vehicle_identity import VehicleIdentity, VehicleMatch
 from app.models.vehicle_observation import VehicleObservation
 from app.schemas.dashboard import (
@@ -60,8 +58,10 @@ class DashboardService:
         online_pct = (active_cams / total_cams * 100.0) if total_cams > 0 else 0.0
 
         # 2. Observations today
-        obs_today_q = select(func.count()).select_from(VehicleObservation).where(
-            VehicleObservation.observed_at >= today_start
+        obs_today_q = (
+            select(func.count())
+            .select_from(VehicleObservation)
+            .where(VehicleObservation.observed_at >= today_start)
         )
         obs_today = (await self._session.execute(obs_today_q)).scalar_one()
 
@@ -76,7 +76,13 @@ class DashboardService:
         hotspots: list[CongestionHotspot] = []
         for pair in congest_report.segments:
             if pair.congestion_indicator > 1.2:
-                sev = "severe" if pair.congestion_indicator > 2.0 else "high" if pair.congestion_indicator > 1.5 else "moderate"
+                sev = (
+                    "severe"
+                    if pair.congestion_indicator > 2.0
+                    else "high"
+                    if pair.congestion_indicator > 1.5
+                    else "moderate"
+                )
                 hotspots.append(
                     CongestionHotspot(
                         corridor_name=f"{pair.source_camera_name} → {pair.destination_camera_name}",
@@ -137,9 +143,13 @@ class DashboardService:
 
         map_cameras: list[MapCameraNode] = []
         for cam in cameras:
-            cnt_q = select(func.count()).select_from(VehicleObservation).where(
-                VehicleObservation.camera_id == cam.id,
-                VehicleObservation.observed_at >= one_hour_ago,
+            cnt_q = (
+                select(func.count())
+                .select_from(VehicleObservation)
+                .where(
+                    VehicleObservation.camera_id == cam.id,
+                    VehicleObservation.observed_at >= one_hour_ago,
+                )
             )
             obs_cnt = (await self._session.execute(cnt_q)).scalar_one()
 
@@ -170,7 +180,9 @@ class DashboardService:
         roads = list(roads_result.scalars().all())
         map_roads: list[MapRoadSegment] = []
         for r in roads:
-            geom = r.geometry.model_dump() if r.geometry else {"type": "LineString", "coordinates": []}
+            geom = (
+                r.geometry.model_dump() if r.geometry else {"type": "LineString", "coordinates": []}
+            )
             map_roads.append(
                 MapRoadSegment(
                     id=r.id,
@@ -244,9 +256,7 @@ class DashboardService:
             active_alerts=map_alerts,
         )
 
-    async def investigate_vehicle(
-        self, identity_id: uuid.UUID
-    ) -> VehicleInvestigationResponse:
+    async def investigate_vehicle(self, identity_id: uuid.UUID) -> VehicleInvestigationResponse:
         """
         Assemble comprehensive forensic dossier for a physical vehicle identity.
         """
@@ -377,9 +387,7 @@ class DashboardService:
             active_alerts=map_alerts,
         )
 
-    async def investigate_alert(
-        self, alert_id: uuid.UUID
-    ) -> AlertInvestigationResponse:
+    async def investigate_alert(self, alert_id: uuid.UUID) -> AlertInvestigationResponse:
         """
         Assemble complete explainability and forensic evidence for a specific alert.
         """
@@ -429,9 +437,7 @@ class DashboardService:
                 camera_names=t.ordered_camera_names or [],
             )
 
-        canonical_plate = (
-            alert.vehicle_identity.primary_plate if alert.vehicle_identity else None
-        )
+        canonical_plate = alert.vehicle_identity.primary_plate if alert.vehicle_identity else None
 
         return AlertInvestigationResponse(
             alert_id=alert.id,
@@ -463,8 +469,10 @@ class DashboardService:
         one_day_ago = now - timedelta(days=1)
 
         # 1. Total volume past 24h
-        obs_count_q = select(func.count()).select_from(VehicleObservation).where(
-            VehicleObservation.observed_at >= one_day_ago
+        obs_count_q = (
+            select(func.count())
+            .select_from(VehicleObservation)
+            .where(VehicleObservation.observed_at >= one_day_ago)
         )
         total_24h = (await self._session.execute(obs_count_q)).scalar_one()
 
@@ -473,7 +481,11 @@ class DashboardService:
             interval="1h", start_time=one_day_ago, end_time=now
         )
         hourly_trend = [
-            {"bucket": b.timestamp_bucket.isoformat(), "total": b.total_volume, "classes": b.by_vehicle_class}
+            {
+                "bucket": b.timestamp_bucket.isoformat(),
+                "total": b.total_volume,
+                "classes": b.by_vehicle_class,
+            }
             for b in vol_resp.buckets
         ]
 
@@ -482,7 +494,13 @@ class DashboardService:
         top_congested: list[CongestionHotspot] = []
         for pair in congest_report.segments:
             if pair.congestion_indicator > 1.1:
-                sev = "severe" if pair.congestion_indicator > 2.0 else "high" if pair.congestion_indicator > 1.5 else "moderate"
+                sev = (
+                    "severe"
+                    if pair.congestion_indicator > 2.0
+                    else "high"
+                    if pair.congestion_indicator > 1.5
+                    else "moderate"
+                )
                 top_congested.append(
                     CongestionHotspot(
                         corridor_name=f"{pair.source_camera_name} → {pair.destination_camera_name}",

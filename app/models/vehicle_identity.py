@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     CheckConstraint,
@@ -42,32 +42,34 @@ class VehicleIdentity(UUIDMixin, TimestampMixin, Base):
 
     # Human-readable reference code, e.g. "VID-20260830-0001"
     identity_code: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, index=True,
-        comment="Human-readable city-wide identity reference"
+        String(64),
+        nullable=False,
+        unique=True,
+        index=True,
+        comment="Human-readable city-wide identity reference",
     )
 
     # Consensus or highest-confidence plate text
     primary_plate: Mapped[str | None] = mapped_column(
-        String(20), nullable=True, index=True,
-        comment="Best consensus license plate reading"
+        String(20), nullable=True, index=True, comment="Best consensus license plate reading"
     )
 
     plate_confidence: Mapped[float | None] = mapped_column(
-        Numeric(5, 4), nullable=True,
-        comment="Confidence of primary plate reading"
+        Numeric(5, 4), nullable=True, comment="Confidence of primary plate reading"
     )
 
     # Consensus vehicle classification and appearance
-    vehicle_class: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, index=True
-    )
+    vehicle_class: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     vehicle_color: Mapped[str | None] = mapped_column(String(32), nullable=True)
     vehicle_make: Mapped[str | None] = mapped_column(String(64), nullable=True)
     vehicle_model: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Lifecycle / Association status
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="candidate", index=True,
+        String(32),
+        nullable=False,
+        default="candidate",
+        index=True,
         comment="candidate | accepted | rejected | needs_review",
     )
 
@@ -80,13 +82,17 @@ class VehicleIdentity(UUIDMixin, TimestampMixin, Base):
     )
 
     total_sightings: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=1,
-        comment="Count of distinct camera sightings linked to this identity"
+        Integer,
+        nullable=False,
+        default=1,
+        comment="Count of distinct camera sightings linked to this identity",
     )
 
     confidence: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.5,
-        comment="Aggregate confidence score of this identity hypothesis"
+        Numeric(5, 4),
+        nullable=False,
+        default=0.5,
+        comment="Aggregate confidence score of this identity hypothesis",
     )
 
     # Vector embedding reference for visual re-ID
@@ -191,26 +197,31 @@ class VehicleMatch(UUIDMixin, TimestampMixin, Base):
 
     # Overall match score in [0.0, 1.0]
     match_score: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False,
-        comment="Composite association score calculated across all signals"
+        Numeric(5, 4),
+        nullable=False,
+        comment="Composite association score calculated across all signals",
     )
 
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="accepted", index=True,
-        comment="candidate | accepted | rejected | needs_review"
+        String(32),
+        nullable=False,
+        default="accepted",
+        index=True,
+        comment="candidate | accepted | rejected | needs_review",
     )
 
     # Breakdown of individual signal scores for explainability
     # e.g. {"plate_similarity": 0.88, "appearance_similarity": 0.92, "temporal_feasibility": 0.97, ...}
     signals: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, default=dict,
-        comment="Signal-by-signal score breakdown for explainability"
+        JSONB,
+        nullable=False,
+        default=dict,
+        comment="Signal-by-signal score breakdown for explainability",
     )
 
     # Human-readable justification of the association decision
     reasoning: Mapped[str] = mapped_column(
-        Text, nullable=False,
-        comment="Explainable rationale behind the association"
+        Text, nullable=False, comment="Explainable rationale behind the association"
     )
 
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -219,8 +230,12 @@ class VehicleMatch(UUIDMixin, TimestampMixin, Base):
 
     # Relationships
     identity: Mapped[VehicleIdentity] = relationship("VehicleIdentity", back_populates="matches")
-    source_camera: Mapped[Camera] = relationship("Camera", foreign_keys=[source_camera_id], lazy="select")
-    target_camera: Mapped[Camera] = relationship("Camera", foreign_keys=[target_camera_id], lazy="select")
+    source_camera: Mapped[Camera] = relationship(
+        "Camera", foreign_keys=[source_camera_id], lazy="select"
+    )
+    target_camera: Mapped[Camera] = relationship(
+        "Camera", foreign_keys=[target_camera_id], lazy="select"
+    )
     source_observation: Mapped[VehicleObservation | None] = relationship(
         "VehicleObservation", foreign_keys=[source_observation_id], lazy="select"
     )

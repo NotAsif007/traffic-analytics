@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import DBSession
 from app.schemas.alert import (
@@ -37,14 +37,16 @@ async def list_alerts(
     svc: AlertServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    alert_type: Optional[str] = Query(None, description="BLACKLIST_MATCH | ROUTE_ANOMALY | TRAVEL_TIME_ANOMALY | CAMERA_OFFLINE"),
-    severity: Optional[str] = Query(None, description="low | medium | high | critical"),
-    status: Optional[str] = Query(None, description="NEW | ACKNOWLEDGED | RESOLVED | DISMISSED"),
-    camera_id: Optional[uuid.UUID] = Query(None),
-    vehicle_identity_id: Optional[uuid.UUID] = Query(None),
-    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0),
-    created_after: Optional[datetime] = Query(None),
-    created_before: Optional[datetime] = Query(None),
+    alert_type: str | None = Query(
+        None, description="BLACKLIST_MATCH | ROUTE_ANOMALY | TRAVEL_TIME_ANOMALY | CAMERA_OFFLINE"
+    ),
+    severity: str | None = Query(None, description="low | medium | high | critical"),
+    status: str | None = Query(None, description="NEW | ACKNOWLEDGED | RESOLVED | DISMISSED"),
+    camera_id: uuid.UUID | None = Query(None),
+    vehicle_identity_id: uuid.UUID | None = Query(None),
+    min_confidence: float | None = Query(None, ge=0.0, le=1.0),
+    created_after: datetime | None = Query(None),
+    created_before: datetime | None = Query(None),
 ) -> PaginatedResponse[AlertResponse]:
     filters = AlertFilters(
         alert_type=alert_type,

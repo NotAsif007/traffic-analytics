@@ -4,17 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from app.schemas.common import AppBaseModel
-from app.schemas.trajectory import TrajectoryTimelineSegment
-
 
 # ---------------------------------------------------------------------------
 # City Overview Schemas
 # ---------------------------------------------------------------------------
+
 
 class CongestionHotspot(AppBaseModel):
     corridor_name: str
@@ -31,14 +30,15 @@ class RecentActivityItem(AppBaseModel):
     title: str
     description: str
     timestamp: datetime
-    camera_name: Optional[str] = None
-    severity: Optional[str] = None
+    camera_name: str | None = None
+    severity: str | None = None
 
 
 class CityOverviewResponse(AppBaseModel):
     """
     Read-optimized high-level summary of city-wide traffic and surveillance operations.
     """
+
     generated_at: datetime
     active_cameras_count: int
     total_cameras_count: int
@@ -55,6 +55,7 @@ class CityOverviewResponse(AppBaseModel):
 # Live Map Schemas
 # ---------------------------------------------------------------------------
 
+
 class MapCameraNode(AppBaseModel):
     id: uuid.UUID
     name: str
@@ -63,7 +64,7 @@ class MapCameraNode(AppBaseModel):
     status: str = Field(..., description="online | stale | offline")
     current_intensity: str = Field(..., description="low | moderate | high")
     observations_last_hour: int
-    last_observation_time: Optional[datetime] = None
+    last_observation_time: datetime | None = None
 
 
 class MapRoadSegment(AppBaseModel):
@@ -76,7 +77,7 @@ class MapRoadSegment(AppBaseModel):
 class MapTrajectoryLine(AppBaseModel):
     trajectory_id: uuid.UUID
     vehicle_identity_id: uuid.UUID
-    canonical_plate: Optional[str] = None
+    canonical_plate: str | None = None
     coordinates: list[list[float]] = Field(
         ..., description="List of [lon, lat] coordinate pairs along route"
     )
@@ -92,9 +93,9 @@ class MapAlertMarker(AppBaseModel):
     alert_code: str
     alert_type: str
     severity: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    camera_name: Optional[str] = None
+    latitude: float | None = None
+    longitude: float | None = None
+    camera_name: str | None = None
     title: str
     timestamp: datetime
 
@@ -103,6 +104,7 @@ class LiveMapResponse(AppBaseModel):
     """
     Read-optimized GIS spatial payload for real-time map rendering.
     """
+
     generated_at: datetime
     cameras: list[MapCameraNode] = Field(default_factory=list)
     road_segments: list[MapRoadSegment] = Field(default_factory=list)
@@ -114,18 +116,19 @@ class LiveMapResponse(AppBaseModel):
 # Vehicle Investigation Schemas
 # ---------------------------------------------------------------------------
 
+
 class PlateObservationEvidence(AppBaseModel):
     observation_id: uuid.UUID
     camera_id: uuid.UUID
     camera_name: str
     timestamp: datetime
-    raw_plate_text: Optional[str] = None
-    plate_confidence: Optional[float] = None
+    raw_plate_text: str | None = None
+    plate_confidence: float | None = None
     detection_confidence: float
     vehicle_class: str
     vehicle_color: str
-    image_path: Optional[str] = None
-    plate_crop_path: Optional[str] = None
+    image_path: str | None = None
+    plate_crop_path: str | None = None
 
 
 class CameraVisitTimeline(AppBaseModel):
@@ -135,24 +138,25 @@ class CameraVisitTimeline(AppBaseModel):
     latitude: float
     longitude: float
     timestamp: datetime
-    dwell_or_transit_seconds: Optional[float] = None
-    segment_speed_kmh: Optional[float] = None
+    dwell_or_transit_seconds: float | None = None
+    segment_speed_kmh: float | None = None
 
 
 class VehicleInvestigationResponse(AppBaseModel):
     """
     Complete law enforcement forensic profile for a vehicle identity.
     """
+
     identity_id: uuid.UUID
-    canonical_plate: Optional[str] = None
+    canonical_plate: str | None = None
     vehicle_class: str
     vehicle_color: str
     overall_confidence: float
     first_seen_at: datetime
     last_seen_at: datetime
     total_sightings_count: int
-    last_known_camera_name: Optional[str] = None
-    last_known_coordinates: Optional[list[float]] = None  # [lon, lat]
+    last_known_camera_name: str | None = None
+    last_known_coordinates: list[float] | None = None  # [lon, lat]
     camera_history: list[CameraVisitTimeline] = Field(default_factory=list)
     plate_observations: list[PlateObservationEvidence] = Field(default_factory=list)
     active_alerts: list[MapAlertMarker] = Field(default_factory=list)
@@ -162,18 +166,20 @@ class VehicleInvestigationResponse(AppBaseModel):
 # Alert Investigation Schemas
 # ---------------------------------------------------------------------------
 
+
 class CameraBrief(AppBaseModel):
     id: uuid.UUID
     name: str
     latitude: float
     longitude: float
-    direction: Optional[str] = None
+    direction: str | None = None
 
 
 class AlertInvestigationResponse(AppBaseModel):
     """
     Complete forensic dossier and explainability breakdown for a triggered alert.
     """
+
     alert_id: uuid.UUID
     alert_code: str
     alert_type: str
@@ -183,26 +189,28 @@ class AlertInvestigationResponse(AppBaseModel):
     title: str
     description: str
     created_at: datetime
-    acknowledged_at: Optional[datetime] = None
-    acknowledged_by: Optional[str] = None
-    resolved_at: Optional[datetime] = None
-    resolved_by: Optional[str] = None
-    resolution_notes: Optional[str] = None
-    vehicle_identity_id: Optional[uuid.UUID] = None
-    canonical_plate: Optional[str] = None
+    acknowledged_at: datetime | None = None
+    acknowledged_by: str | None = None
+    resolved_at: datetime | None = None
+    resolved_by: str | None = None
+    resolution_notes: str | None = None
+    vehicle_identity_id: uuid.UUID | None = None
+    canonical_plate: str | None = None
     cameras_involved: list[CameraBrief] = Field(default_factory=list)
     evidence: dict[str, Any] = Field(default_factory=dict)
-    trajectory_summary: Optional[MapTrajectoryLine] = None
+    trajectory_summary: MapTrajectoryLine | None = None
 
 
 # ---------------------------------------------------------------------------
 # Consolidated Dashboard Analytics Schema
 # ---------------------------------------------------------------------------
 
+
 class DashboardAnalyticsSummaryResponse(AppBaseModel):
     """
     Consolidated metrics summary tailored for the Executive Dashboard overview.
     """
+
     generated_at: datetime
     total_vehicles_past_24h: int
     hourly_volume_trend: list[dict[str, Any]] = Field(default_factory=list)

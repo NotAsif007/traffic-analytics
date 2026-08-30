@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
@@ -34,6 +34,7 @@ ObsServiceDep = Annotated[VehicleObservationService, Depends(_obs_service)]
 # Single observation endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/",
     response_model=VehicleObservationResponse,
@@ -62,31 +63,28 @@ async def list_observations(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     # Filters
-    camera_id: Optional[uuid.UUID] = Query(None, description="Filter by camera UUID"),
-    observed_after: Optional[datetime] = Query(
+    camera_id: uuid.UUID | None = Query(None, description="Filter by camera UUID"),
+    observed_after: datetime | None = Query(
         None, description="Filter observations after this timestamp (ISO 8601 with tz)"
     ),
-    observed_before: Optional[datetime] = Query(
+    observed_before: datetime | None = Query(
         None, description="Filter observations before this timestamp (ISO 8601 with tz)"
     ),
-    plate_text: Optional[str] = Query(
-        None, max_length=20,
-        description="Partial case-insensitive plate text match"
+    plate_text: str | None = Query(
+        None, max_length=20, description="Partial case-insensitive plate text match"
     ),
-    vehicle_class: Optional[str] = Query(None, description="Exact vehicle class filter"),
-    min_detection_confidence: Optional[float] = Query(
-        None, ge=0.0, le=1.0,
-        description="Minimum detection confidence threshold"
+    vehicle_class: str | None = Query(None, description="Exact vehicle class filter"),
+    min_detection_confidence: float | None = Query(
+        None, ge=0.0, le=1.0, description="Minimum detection confidence threshold"
     ),
-    min_plate_confidence: Optional[float] = Query(
-        None, ge=0.0, le=1.0,
-        description="Minimum plate OCR confidence threshold"
+    min_plate_confidence: float | None = Query(
+        None, ge=0.0, le=1.0, description="Minimum plate OCR confidence threshold"
     ),
-    status: Optional[str] = Query(
+    status: str | None = Query(
         None,
-        description="Filter by lifecycle status: detected|processed|validated|associated|rejected"
+        description="Filter by lifecycle status: detected|processed|validated|associated|rejected",
     ),
-    source: Optional[str] = Query(None, description="Filter by pipeline source identifier"),
+    source: str | None = Query(None, description="Filter by pipeline source identifier"),
 ) -> PaginatedResponse[VehicleObservationResponse]:
     filters = ObservationFilters(
         camera_id=camera_id,
@@ -134,6 +132,7 @@ async def update_observation_status(
 # ---------------------------------------------------------------------------
 # Bulk ingestion
 # ---------------------------------------------------------------------------
+
 
 @router.post(
     "/bulk",

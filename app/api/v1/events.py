@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status
 
@@ -46,7 +45,7 @@ async def publish_event(
 )
 async def list_dead_letters(
     dl_store: DeadLetterStore = Depends(get_dead_letter_store),
-    status_filter: Optional[str] = Query(None, description="FAILED | RETRIED | RESOLVED"),
+    status_filter: str | None = Query(None, description="FAILED | RETRIED | RESOLVED"),
     limit: int = Query(50, ge=1, le=200),
 ) -> list[DeadLetterRecord]:
     return await dl_store.list_dead_letters(status=status_filter, limit=limit)

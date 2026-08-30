@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.association.contracts import ScoringWeights, SightingContext
+from app.association.contracts import SightingContext
 from app.association.scorer import AssociationScorer
 
 

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
+    ForeignKey,
     Index,
     Integer,
     Numeric,
@@ -16,7 +17,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey
 
 from app.db.base import Base
 from app.models.mixins import TimestampMixin, UUIDMixin
@@ -51,15 +51,19 @@ class VehicleObservation(UUIDMixin, TimestampMixin, Base):
     # The pipeline or system that produced this observation
     # e.g. "yolov8-lpr-v1", "mock-ingestor", "edge-node-3"
     source: Mapped[str] = mapped_column(
-        String(64), nullable=False, index=True,
-        comment="Pipeline/system identifier that produced this observation"
+        String(64),
+        nullable=False,
+        index=True,
+        comment="Pipeline/system identifier that produced this observation",
     )
 
     # External ID assigned by the source pipeline (e.g. inference job ID + frame idx)
     # Combined with source, this forms the unique idempotency key.
     source_observation_id: Mapped[str] = mapped_column(
-        String(128), nullable=False, index=True,
-        comment="ID assigned by the source pipeline — unique per source"
+        String(128),
+        nullable=False,
+        index=True,
+        comment="ID assigned by the source pipeline — unique per source",
     )
 
     # -----------------------------------------------------------------------
@@ -93,24 +97,23 @@ class VehicleObservation(UUIDMixin, TimestampMixin, Base):
     # -----------------------------------------------------------------------
 
     vehicle_class: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, index=True,
-        comment="Detected vehicle class: car | truck | motorcycle | bus | van | bicycle"
+        String(64),
+        nullable=True,
+        index=True,
+        comment="Detected vehicle class: car | truck | motorcycle | bus | van | bicycle",
     )
 
     vehicle_color: Mapped[str | None] = mapped_column(
-        String(32), nullable=True,
-        comment="Detected dominant vehicle color"
+        String(32), nullable=True, comment="Detected dominant vehicle color"
     )
 
     # {x1: float, y1: float, x2: float, y2: float} — normalised 0..1
     bounding_box: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True,
-        comment="Vehicle bounding box in normalised coordinates {x1,y1,x2,y2}"
+        JSONB, nullable=True, comment="Vehicle bounding box in normalised coordinates {x1,y1,x2,y2}"
     )
 
     detection_confidence: Mapped[float | None] = mapped_column(
-        Numeric(5, 4), nullable=True,
-        comment="Vehicle detector confidence (0.0–1.0)"
+        Numeric(5, 4), nullable=True, comment="Vehicle detector confidence (0.0–1.0)"
     )
 
     # -----------------------------------------------------------------------
@@ -118,23 +121,19 @@ class VehicleObservation(UUIDMixin, TimestampMixin, Base):
     # -----------------------------------------------------------------------
 
     plate_text: Mapped[str | None] = mapped_column(
-        String(20), nullable=True, index=True,
-        comment="Raw OCR plate output — not ground truth"
+        String(20), nullable=True, index=True, comment="Raw OCR plate output — not ground truth"
     )
 
     plate_confidence: Mapped[float | None] = mapped_column(
-        Numeric(5, 4), nullable=True,
-        comment="OCR confidence for the plate reading (0.0–1.0)"
+        Numeric(5, 4), nullable=True, comment="OCR confidence for the plate reading (0.0–1.0)"
     )
 
     plate_bbox: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True,
-        comment="Plate bounding box {x1,y1,x2,y2} within the vehicle crop"
+        JSONB, nullable=True, comment="Plate bounding box {x1,y1,x2,y2} within the vehicle crop"
     )
 
     plate_region: Mapped[str | None] = mapped_column(
-        String(16), nullable=True,
-        comment="Detected plate region/country code (e.g. IN, MH, KA)"
+        String(16), nullable=True, comment="Detected plate region/country code (e.g. IN, MH, KA)"
     )
 
     # -----------------------------------------------------------------------
@@ -165,18 +164,15 @@ class VehicleObservation(UUIDMixin, TimestampMixin, Base):
     # -----------------------------------------------------------------------
 
     estimated_speed_kmh: Mapped[float | None] = mapped_column(
-        Numeric(6, 2), nullable=True,
-        comment="Estimated speed in km/h from the AI pipeline"
+        Numeric(6, 2), nullable=True, comment="Estimated speed in km/h from the AI pipeline"
     )
 
     direction: Mapped[str | None] = mapped_column(
-        String(32), nullable=True,
-        comment="Movement direction: N/S/E/W or angle in degrees"
+        String(32), nullable=True, comment="Movement direction: N/S/E/W or angle in degrees"
     )
 
     lane: Mapped[int | None] = mapped_column(
-        Integer, nullable=True,
-        comment="Lane number the vehicle was detected in (1-based)"
+        Integer, nullable=True, comment="Lane number the vehicle was detected in (1-based)"
     )
 
     # -----------------------------------------------------------------------
@@ -184,8 +180,11 @@ class VehicleObservation(UUIDMixin, TimestampMixin, Base):
     # -----------------------------------------------------------------------
 
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="detected", index=True,
-        comment="detected | processed | validated | associated | rejected"
+        String(32),
+        nullable=False,
+        default="detected",
+        index=True,
+        comment="detected | processed | validated | associated | rejected",
     )
 
     # Reason for rejection if status == rejected

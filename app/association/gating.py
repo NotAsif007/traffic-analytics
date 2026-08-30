@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import timedelta
 
 from app.association.contracts import SightingContext
 
@@ -27,7 +26,7 @@ class CandidateGating:
         self,
         source: SightingContext,
         target: SightingContext,
-        connected_camera_ids: Optional[set[uuid.UUID]] = None,
+        connected_camera_ids: set[uuid.UUID] | None = None,
     ) -> bool:
         """
         Check if target sighting is a plausible candidate given the source sighting.
@@ -50,11 +49,12 @@ class CandidateGating:
                 return False
 
         # If camera topology filter is supplied: target camera should be reachable
-        if connected_camera_ids is not None:
-            if target.camera_id not in connected_camera_ids and target.camera_id != source.camera_id:
-                # If plate text is identical, allow candidate even if indirect topology
-                if source.plate_text and target.plate_text and source.plate_text == target.plate_text:
-                    return True
-                return False
+        if connected_camera_ids is not None and (
+            target.camera_id not in connected_camera_ids and target.camera_id != source.camera_id
+        ):
+            # If plate text is identical, allow candidate even if indirect topology
+            return bool(
+                source.plate_text and target.plate_text and source.plate_text == target.plate_text
+            )
 
         return True

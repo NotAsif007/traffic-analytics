@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +19,7 @@ class TrajectoryRepository(BaseRepository[Trajectory]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def get_with_points(self, trajectory_id: uuid.UUID) -> Optional[Trajectory]:
+    async def get_with_points(self, trajectory_id: uuid.UUID) -> Trajectory | None:
         """Fetch trajectory with all points ordered by sequence order."""
         result = await self._session.execute(
             select(Trajectory)
@@ -29,7 +28,7 @@ class TrajectoryRepository(BaseRepository[Trajectory]):
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, trajectory_id_str: str) -> Optional[Trajectory]:
+    async def get_by_code(self, trajectory_id_str: str) -> Trajectory | None:
         result = await self._session.execute(
             select(Trajectory)
             .where(Trajectory.trajectory_id == trajectory_id_str)
@@ -37,9 +36,7 @@ class TrajectoryRepository(BaseRepository[Trajectory]):
         )
         return result.scalar_one_or_none()
 
-    async def get_active_by_identity(
-        self, identity_id: uuid.UUID
-    ) -> Optional[Trajectory]:
+    async def get_active_by_identity(self, identity_id: uuid.UUID) -> Trajectory | None:
         """Find the currently active trajectory for a vehicle identity."""
         result = await self._session.execute(
             select(Trajectory)
@@ -74,9 +71,7 @@ class TrajectoryRepository(BaseRepository[Trajectory]):
             conditions.append(Trajectory.end_time <= filters.end_before)
         if filters.camera_id:
             # Check JSONB array ordered_camera_ids contains camera_id string
-            conditions.append(
-                Trajectory.ordered_camera_ids.contains([str(filters.camera_id)])
-            )
+            conditions.append(Trajectory.ordered_camera_ids.contains([str(filters.camera_id)]))
 
         if conditions:
             query = query.where(*conditions)
@@ -84,10 +79,14 @@ class TrajectoryRepository(BaseRepository[Trajectory]):
 
         total = (await self._session.execute(count_query)).scalar_one()
         rows = (
-            await self._session.execute(
-                query.order_by(Trajectory.end_time.desc()).offset(offset).limit(limit)
+            (
+                await self._session.execute(
+                    query.order_by(Trajectory.end_time.desc()).offset(offset).limit(limit)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows), total
 
     async def get_by_vehicle_identity(

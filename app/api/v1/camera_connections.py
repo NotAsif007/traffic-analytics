@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
@@ -45,9 +45,9 @@ async def list_connections(
     svc: ConnectionServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    source_camera_id: Optional[uuid.UUID] = Query(None),
-    destination_camera_id: Optional[uuid.UUID] = Query(None),
-    road_id: Optional[uuid.UUID] = Query(None),
+    source_camera_id: uuid.UUID | None = Query(None),
+    destination_camera_id: uuid.UUID | None = Query(None),
+    road_id: uuid.UUID | None = Query(None),
 ) -> PaginatedResponse[CameraConnectionResponse]:
     """List camera connections with optional filters."""
     return await svc.list_connections(

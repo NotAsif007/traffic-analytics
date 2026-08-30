@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from app.schemas.vehicle_observation import VehicleObservationCreate
 from app.tracking.contracts import TrackPointData, TrackState, calculate_iou
@@ -45,7 +44,7 @@ class IoUSingleCameraTracker(SingleCameraTracker):
         camera_id: uuid.UUID,
         timestamp: datetime,
         detections: list[VehicleObservationCreate],
-        frame_number: Optional[int] = None,
+        frame_number: int | None = None,
     ) -> list[TrackState]:
         if camera_id not in self._tracks:
             self._tracks[camera_id] = []
@@ -78,11 +77,13 @@ class IoUSingleCameraTracker(SingleCameraTracker):
 
             pairs.sort(key=lambda x: x[0], reverse=True)
 
-            for score, t_idx, d_idx in pairs:
+            for _score, t_idx, d_idx in pairs:
                 if t_idx not in matched_tracks and d_idx not in matched_detections:
                     matched_tracks.add(t_idx)
                     matched_detections.add(d_idx)
-                    self._update_track(active_tracks[t_idx], detections[d_idx], timestamp, frame_number)
+                    self._update_track(
+                        active_tracks[t_idx], detections[d_idx], timestamp, frame_number
+                    )
 
         # Handle unmatched active tracks (increment lost frames or terminate)
         for t_idx, track in enumerate(active_tracks):
@@ -107,7 +108,7 @@ class IoUSingleCameraTracker(SingleCameraTracker):
         camera_id: uuid.UUID,
         det: VehicleObservationCreate,
         timestamp: datetime,
-        frame_number: Optional[int],
+        frame_number: int | None,
     ) -> TrackState:
         track_id = self._generate_track_id(camera_id)
         point = TrackPointData(
@@ -143,7 +144,7 @@ class IoUSingleCameraTracker(SingleCameraTracker):
         track: TrackState,
         det: VehicleObservationCreate,
         timestamp: datetime,
-        frame_number: Optional[int],
+        frame_number: int | None,
     ) -> None:
         track.hits += 1
         track.age += 1
@@ -155,7 +156,8 @@ class IoUSingleCameraTracker(SingleCameraTracker):
 
         # Update running average confidence
         track.confidence = round(
-            ((track.confidence * (track.hits - 1)) + (det.detection_confidence or 1.0)) / track.hits,
+            ((track.confidence * (track.hits - 1)) + (det.detection_confidence or 1.0))
+            / track.hits,
             4,
         )
 
@@ -186,7 +188,7 @@ class IoUSingleCameraTracker(SingleCameraTracker):
             return []
         return [t for t in self._tracks[camera_id] if t.status in ("active", "lost")]
 
-    def reset(self, camera_id: Optional[uuid.UUID] = None) -> None:
+    def reset(self, camera_id: uuid.UUID | None = None) -> None:
         if camera_id is not None:
             self._tracks.pop(camera_id, None)
         else:

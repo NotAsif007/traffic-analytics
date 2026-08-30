@@ -84,6 +84,8 @@ select = [
 ignore = [
     "E501",  # line length — ruff format handles this
     "B008",  # do not perform function calls in default arguments (FastAPI Depends)
+    "SIM117",  # multiple with statements
+    "B017",  # pytest.raises(Exception) in tests
 ]
 
 [tool.ruff.lint.isort]

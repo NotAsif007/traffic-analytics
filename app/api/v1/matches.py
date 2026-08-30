@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -31,8 +31,8 @@ async def list_matches(
     svc: IdentityServiceDep,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    identity_id: Optional[uuid.UUID] = Query(None, description="Filter by vehicle identity UUID"),
-    status: Optional[str] = Query(None, description="candidate | accepted | rejected | needs_review"),
+    identity_id: uuid.UUID | None = Query(None, description="Filter by vehicle identity UUID"),
+    status: str | None = Query(None, description="candidate | accepted | rejected | needs_review"),
 ) -> PaginatedResponse[VehicleMatchResponse]:
     return await svc.list_matches(
         identity_id=identity_id, status=status, page=page, page_size=page_size

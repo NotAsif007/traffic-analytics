@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +21,7 @@ class CameraConnectionRepository(BaseRepository[CameraConnection]):
         self,
         source_camera_id: uuid.UUID,
         destination_camera_id: uuid.UUID,
-    ) -> Optional[CameraConnection]:
+    ) -> CameraConnection | None:
         """Return connection between a specific camera pair, if it exists."""
         result = await self._session.execute(
             select(CameraConnection).where(
@@ -37,9 +36,9 @@ class CameraConnectionRepository(BaseRepository[CameraConnection]):
         *,
         offset: int = 0,
         limit: int = 20,
-        source_camera_id: Optional[uuid.UUID] = None,
-        destination_camera_id: Optional[uuid.UUID] = None,
-        road_id: Optional[uuid.UUID] = None,
+        source_camera_id: uuid.UUID | None = None,
+        destination_camera_id: uuid.UUID | None = None,
+        road_id: uuid.UUID | None = None,
     ) -> tuple[list[CameraConnection], int]:
         """List connections with optional filters."""
         query = select(CameraConnection)
@@ -71,8 +70,6 @@ class CameraConnectionRepository(BaseRepository[CameraConnection]):
     async def get_incoming(self, camera_id: uuid.UUID) -> list[CameraConnection]:
         """All connections arriving at a camera."""
         result = await self._session.execute(
-            select(CameraConnection).where(
-                CameraConnection.destination_camera_id == camera_id
-            )
+            select(CameraConnection).where(CameraConnection.destination_camera_id == camera_id)
         )
         return list(result.scalars().all())

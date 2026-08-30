@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -32,7 +32,7 @@ AnalyticsServiceDep = Annotated[AnalyticsService, Depends(_analytics_service)]
 
 
 def _default_time_window(
-    start_time: Optional[datetime], end_time: Optional[datetime]
+    start_time: datetime | None, end_time: datetime | None
 ) -> tuple[datetime, datetime]:
     now = datetime.now(timezone.utc)
     end = end_time or now
@@ -48,11 +48,11 @@ def _default_time_window(
 async def get_traffic_volume(
     svc: AnalyticsServiceDep,
     interval: str = Query("1h", description="1m | 5m | 15m | 1h | 1d"),
-    start_time: Optional[datetime] = Query(None, description="Start timestamp (default: 24h ago)"),
-    end_time: Optional[datetime] = Query(None, description="End timestamp (default: now)"),
-    camera_id: Optional[uuid.UUID] = Query(None, description="Filter by camera UUID"),
-    road_id: Optional[uuid.UUID] = Query(None, description="Filter by road UUID"),
-    vehicle_class: Optional[str] = Query(None, description="Filter by vehicle class"),
+    start_time: datetime | None = Query(None, description="Start timestamp (default: 24h ago)"),
+    end_time: datetime | None = Query(None, description="End timestamp (default: now)"),
+    camera_id: uuid.UUID | None = Query(None, description="Filter by camera UUID"),
+    road_id: uuid.UUID | None = Query(None, description="Filter by road UUID"),
+    vehicle_class: str | None = Query(None, description="Filter by vehicle class"),
 ) -> TrafficVolumeResponse:
     start, end = _default_time_window(start_time, end_time)
     return await svc.get_traffic_volume(
@@ -72,10 +72,10 @@ async def get_traffic_volume(
 )
 async def get_vehicle_class_distribution(
     svc: AnalyticsServiceDep,
-    start_time: Optional[datetime] = Query(None),
-    end_time: Optional[datetime] = Query(None),
-    camera_id: Optional[uuid.UUID] = Query(None),
-    road_id: Optional[uuid.UUID] = Query(None),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
+    camera_id: uuid.UUID | None = Query(None),
+    road_id: uuid.UUID | None = Query(None),
 ) -> VehicleClassDistributionResponse:
     start, end = _default_time_window(start_time, end_time)
     return await svc.get_vehicle_class_distribution(
@@ -90,10 +90,10 @@ async def get_vehicle_class_distribution(
 )
 async def get_traffic_density(
     svc: AnalyticsServiceDep,
-    start_time: Optional[datetime] = Query(None),
-    end_time: Optional[datetime] = Query(None),
-    camera_id: Optional[uuid.UUID] = Query(None),
-    road_id: Optional[uuid.UUID] = Query(None),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
+    camera_id: uuid.UUID | None = Query(None),
+    road_id: uuid.UUID | None = Query(None),
 ) -> TrafficDensityResponse:
     start, end = _default_time_window(start_time, end_time)
     return await svc.get_traffic_density(
@@ -108,10 +108,10 @@ async def get_traffic_density(
 )
 async def get_travel_time_stats(
     svc: AnalyticsServiceDep,
-    start_time: Optional[datetime] = Query(None),
-    end_time: Optional[datetime] = Query(None),
-    source_camera_id: Optional[uuid.UUID] = Query(None),
-    destination_camera_id: Optional[uuid.UUID] = Query(None),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
+    source_camera_id: uuid.UUID | None = Query(None),
+    destination_camera_id: uuid.UUID | None = Query(None),
 ) -> TravelTimeStatsResponse:
     start, end = _default_time_window(start_time, end_time)
     return await svc.get_travel_time_stats(
@@ -140,8 +140,8 @@ async def get_congestion_report(
 )
 async def get_od_matrix(
     svc: AnalyticsServiceDep,
-    start_time: Optional[datetime] = Query(None),
-    end_time: Optional[datetime] = Query(None),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
 ) -> ODMatrixResponse:
     start, end = _default_time_window(start_time, end_time)
     return await svc.get_od_matrix(start_time=start, end_time=end)
@@ -154,8 +154,8 @@ async def get_od_matrix(
 )
 async def get_route_frequency(
     svc: AnalyticsServiceDep,
-    start_time: Optional[datetime] = Query(None),
-    end_time: Optional[datetime] = Query(None),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
     limit: int = Query(10, ge=1, le=100),
 ) -> RouteFrequencyResponse:
     start, end = _default_time_window(start_time, end_time)

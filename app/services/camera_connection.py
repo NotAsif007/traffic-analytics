@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,13 +58,9 @@ class CameraConnectionService:
         if not dst:
             raise NotFoundError("Camera (destination)", dest_id)
 
-    async def create_connection(
-        self, payload: CameraConnectionCreate
-    ) -> CameraConnectionResponse:
+    async def create_connection(self, payload: CameraConnectionCreate) -> CameraConnectionResponse:
         # Validate cameras exist
-        await self._validate_cameras_exist(
-            payload.source_camera_id, payload.destination_camera_id
-        )
+        await self._validate_cameras_exist(payload.source_camera_id, payload.destination_camera_id)
 
         # Validate road_id if provided
         if payload.road_id:
@@ -115,9 +111,9 @@ class CameraConnectionService:
         *,
         page: int = 1,
         page_size: int = 20,
-        source_camera_id: Optional[uuid.UUID] = None,
-        destination_camera_id: Optional[uuid.UUID] = None,
-        road_id: Optional[uuid.UUID] = None,
+        source_camera_id: uuid.UUID | None = None,
+        destination_camera_id: uuid.UUID | None = None,
+        road_id: uuid.UUID | None = None,
     ) -> PaginatedResponse[CameraConnectionResponse]:
         offset = (page - 1) * page_size
         conns, total = await self._repo.list_connections(
@@ -143,8 +139,15 @@ class CameraConnectionService:
                 raise NotFoundError("Road", payload.road_id)
 
         updates: dict[str, Any] = {}
-        for field in ("road_id", "min_travel_time_s", "max_travel_time_s",
-                      "avg_travel_time_s", "distance_m", "connection_type", "notes"):
+        for field in (
+            "road_id",
+            "min_travel_time_s",
+            "max_travel_time_s",
+            "avg_travel_time_s",
+            "distance_m",
+            "connection_type",
+            "notes",
+        ):
             val = getattr(payload, field, None)
             if val is not None:
                 updates[field] = val

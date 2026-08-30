@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
@@ -26,6 +26,7 @@ class DomainEvent(AppBaseModel):
     """
     Standardized, versioned event contract for real-time traffic processing.
     """
+
     event_id: str = Field(
         default_factory=lambda: f"EVT-{uuid.uuid4()}",
         description="Globally unique identifier for the event",
@@ -38,7 +39,7 @@ class DomainEvent(AppBaseModel):
     source: str = Field(..., description="Originating subsystem (e.g. anpr-pipeline, tracker)")
     payload: dict[str, Any] = Field(default_factory=dict, description="Event data payload")
     schema_version: str = Field(default="1.0", description="Semantic schema version")
-    idempotency_key: Optional[str] = Field(
+    idempotency_key: str | None = Field(
         default=None, description="Optional key to enforce idempotent deduplication"
     )
 
@@ -49,13 +50,14 @@ class DeadLetterRecord(AppBaseModel):
     """
     Diagnostic record of an event that failed processing after all retries.
     """
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     event_id: str
     event_type: str
     source: str
     payload: dict[str, Any]
     error_message: str
-    error_traceback: Optional[str] = None
+    error_traceback: str | None = None
     retry_count: int = Field(default=1)
     first_failed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_failed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -81,7 +81,9 @@ async def test_get_identity_not_found(identity_service: VehicleIdentityService) 
 async def test_get_identity_detail(
     identity_service: VehicleIdentityService, sample_identity: MagicMock
 ) -> None:
-    with patch.object(identity_service._identity_repo, "get_with_matches", return_value=sample_identity):
+    with patch.object(
+        identity_service._identity_repo, "get_with_matches", return_value=sample_identity
+    ):
         res = await identity_service.get_identity_detail(VID_ID)
         assert res.id == VID_ID
         assert res.identity_code == "VID-20260830-0001"
@@ -95,7 +97,9 @@ async def test_list_identities_pagination(
     with patch.object(
         identity_service._identity_repo, "list_identities", return_value=([sample_identity], 1)
     ):
-        res = await identity_service.list_identities(filters=IdentityFilters(), page=1, page_size=10)
+        res = await identity_service.list_identities(
+            filters=IdentityFilters(), page=1, page_size=10
+        )
         assert res.total == 1
         assert len(res.items) == 1
         assert res.items[0].identity_code == "VID-20260830-0001"

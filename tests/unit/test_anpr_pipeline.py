@@ -11,7 +11,6 @@ from app.anpr.contracts import FrameInput
 from app.anpr.mock import MockPlateDetector, MockPlateOCR, MockVehicleDetector
 from app.anpr.normalizer import OCRNormalizer
 from app.anpr.pipeline import ANPRPipeline
-from app.schemas.vehicle_observation import BoundingBox
 
 
 @pytest.fixture

@@ -3,16 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
 
-from shapely.geometry import LineString, Point, mapping
-from shapely.wkt import loads as wkt_loads
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.camera import Camera
 from app.models.trajectory import Trajectory, TrajectoryPoint
 from app.models.vehicle_observation import VehicleObservation
 from app.repositories.camera import CameraRepository
@@ -20,9 +15,7 @@ from app.repositories.camera_connection import CameraConnectionRepository
 from app.repositories.trajectory import TrajectoryRepository
 from app.repositories.vehicle_identity import VehicleIdentityRepository
 from app.schemas.common import PaginatedResponse
-from app.schemas.road import GeoJSONGeometry
 from app.schemas.trajectory import (
-    TrajectoryCreate,
     TrajectoryDetailResponse,
     TrajectoryFilters,
     TrajectoryPointResponse,
@@ -199,7 +192,9 @@ class TrajectoryService:
         if last_pt:
             delta_seconds = (obs.observed_at - last_pt.timestamp).total_seconds()
             if delta_seconds < 0:
-                raise ValidationError("Cannot append observation with timestamp earlier than previous point")
+                raise ValidationError(
+                    "Cannot append observation with timestamp earlier than previous point"
+                )
 
             # Look up connection between cameras
             conn = await self._conn_repo.get_by_camera_pair(last_pt.camera_id, obs.camera_id)
@@ -208,7 +203,11 @@ class TrajectoryService:
             # Calculate speed on this segment
             speed_kmh = (segment_dist_m / max(1.0, delta_seconds)) * 3.6
             if delta_seconds > 0 and speed_kmh > 200.0:
-                logger.warning("trajectory.high_speed_warning", speed_kmh=speed_kmh, traj_id=trajectory.trajectory_id)
+                logger.warning(
+                    "trajectory.high_speed_warning",
+                    speed_kmh=speed_kmh,
+                    traj_id=trajectory.trajectory_id,
+                )
 
             seq_order = len(points) + 1
         else:
@@ -239,7 +238,9 @@ class TrajectoryService:
         # Update trajectory summary metrics
         trajectory.end_time = obs.observed_at
         trajectory.total_distance_m += segment_dist_m
-        trajectory.total_travel_time_s = int((obs.observed_at - trajectory.start_time).total_seconds())
+        trajectory.total_travel_time_s = int(
+            (obs.observed_at - trajectory.start_time).total_seconds()
+        )
         trajectory.points_count = seq_order
 
         if trajectory.total_travel_time_s > 0:
@@ -294,7 +295,9 @@ class TrajectoryService:
                     distance_meters=dist,
                     speed_kmh=round(spd, 2),
                     plate_text=p_curr.plate_text or p_prev.plate_text,
-                    plate_confidence=float(p_curr.plate_confidence) if p_curr.plate_confidence else None,
+                    plate_confidence=float(p_curr.plate_confidence)
+                    if p_curr.plate_confidence
+                    else None,
                     is_connected_road=is_connected,
                     segment_status=status_label,
                 )

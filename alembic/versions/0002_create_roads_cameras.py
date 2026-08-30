@@ -149,12 +149,8 @@ def upgrade() -> None:
             "distance_m IS NULL OR distance_m > 0",
             name="ck_camera_connections_distance_positive",
         ),
-        sa.ForeignKeyConstraint(
-            ["source_camera_id"], ["cameras.id"], ondelete="CASCADE"
-        ),
-        sa.ForeignKeyConstraint(
-            ["destination_camera_id"], ["cameras.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["source_camera_id"], ["cameras.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["destination_camera_id"], ["cameras.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["road_id"], ["roads.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )

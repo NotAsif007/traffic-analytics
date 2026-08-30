@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
-from typing import Optional
-
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +20,7 @@ class VehicleObservationRepository(BaseRepository[VehicleObservation]):
         self,
         source: str,
         source_observation_id: str,
-    ) -> Optional[VehicleObservation]:
+    ) -> VehicleObservation | None:
         """Look up by idempotency key (source, source_observation_id)."""
         result = await self._session.execute(
             select(VehicleObservation).where(
@@ -66,9 +62,7 @@ class VehicleObservationRepository(BaseRepository[VehicleObservation]):
             if order_by_desc
             else VehicleObservation.observed_at.asc()
         )
-        result = await self._session.execute(
-            query.order_by(order_col).offset(offset).limit(limit)
-        )
+        result = await self._session.execute(query.order_by(order_col).offset(offset).limit(limit))
         return list(result.scalars().all()), total
 
     async def get_many_by_source(
@@ -89,9 +83,7 @@ class VehicleObservationRepository(BaseRepository[VehicleObservation]):
             & (VehicleObservation.source_observation_id == obs_id)
             for src, obs_id in pairs
         ]
-        result = await self._session.execute(
-            select(VehicleObservation).where(or_(*conditions))
-        )
+        result = await self._session.execute(select(VehicleObservation).where(or_(*conditions)))
         existing = result.scalars().all()
         return {(obs.source, obs.source_observation_id): obs for obs in existing}
 
@@ -111,22 +103,16 @@ def _build_filter_conditions(f: ObservationFilters) -> list:
 
     if f.plate_text:
         # Case-insensitive partial match (uses pg_trgm GIN index)
-        conditions.append(
-            VehicleObservation.plate_text.ilike(f"%{f.plate_text}%")
-        )
+        conditions.append(VehicleObservation.plate_text.ilike(f"%{f.plate_text}%"))
 
     if f.vehicle_class:
         conditions.append(VehicleObservation.vehicle_class == f.vehicle_class)
 
     if f.min_detection_confidence is not None:
-        conditions.append(
-            VehicleObservation.detection_confidence >= f.min_detection_confidence
-        )
+        conditions.append(VehicleObservation.detection_confidence >= f.min_detection_confidence)
 
     if f.min_plate_confidence is not None:
-        conditions.append(
-            VehicleObservation.plate_confidence >= f.min_plate_confidence
-        )
+        conditions.append(VehicleObservation.plate_confidence >= f.min_plate_confidence)
 
     if f.status:
         conditions.append(VehicleObservation.status == f.status)

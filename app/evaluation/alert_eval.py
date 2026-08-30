@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from app.anpr.matcher import PlateMatcher
 from app.evaluation.contracts import AlertMetrics, GroundTruthObservation

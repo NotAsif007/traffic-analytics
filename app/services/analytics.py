@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import math
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any
 
 import numpy as np
 from sqlalchemy import func, select
@@ -48,9 +47,9 @@ class AnalyticsService:
         start_time: datetime,
         end_time: datetime,
         interval: str = "1h",
-        camera_id: Optional[uuid.UUID] = None,
-        road_id: Optional[uuid.UUID] = None,
-        vehicle_class: Optional[str] = None,
+        camera_id: uuid.UUID | None = None,
+        road_id: uuid.UUID | None = None,
+        vehicle_class: str | None = None,
     ) -> TrafficVolumeResponse:
         """Compute traffic volume bucketed by time interval across cameras."""
         query = select(VehicleObservation).where(
@@ -95,7 +94,7 @@ class AnalyticsService:
 
         for obs in observations:
             # Find matching bucket
-            for b_start, b_data in buckets_map.items():
+            for _b_start, b_data in buckets_map.items():
                 if b_data["bucket_start"] <= obs.observed_at < b_data["bucket_end"]:
                     b_data["count"] += 1
                     cls_name = obs.vehicle_class or "unknown"
@@ -126,8 +125,8 @@ class AnalyticsService:
         *,
         start_time: datetime,
         end_time: datetime,
-        camera_id: Optional[uuid.UUID] = None,
-        road_id: Optional[uuid.UUID] = None,
+        camera_id: uuid.UUID | None = None,
+        road_id: uuid.UUID | None = None,
     ) -> VehicleClassDistributionResponse:
         """Compute vehicle classification counts and percentage distribution."""
         query = select(
@@ -169,8 +168,8 @@ class AnalyticsService:
         *,
         start_time: datetime,
         end_time: datetime,
-        camera_id: Optional[uuid.UUID] = None,
-        road_id: Optional[uuid.UUID] = None,
+        camera_id: uuid.UUID | None = None,
+        road_id: uuid.UUID | None = None,
     ) -> TrafficDensityResponse:
         """
         Calculate traffic density using Greenshields fundamental traffic flow theory:
@@ -200,11 +199,8 @@ class AnalyticsService:
             for o in obs_rows
             if o.estimated_speed_kmh and float(o.estimated_speed_kmh) > 0
         ]
-        if speeds:
-            # Space-mean speed is the harmonic mean of individual speeds
-            space_mean_speed = round(len(speeds) / sum(1.0 / s for s in speeds), 2)
-        else:
-            space_mean_speed = 40.0  # Urban default speed in km/h
+        # Space-mean speed is the harmonic mean of individual speeds
+        space_mean_speed = round(len(speeds) / sum(1.0 / s for s in speeds), 2) if speeds else 40.0
 
         # 3. Density = q / v_s (vehicles per km)
         density = round(flow_rate / max(space_mean_speed, 1.0), 2)
@@ -247,8 +243,8 @@ class AnalyticsService:
         *,
         start_time: datetime,
         end_time: datetime,
-        source_camera_id: Optional[uuid.UUID] = None,
-        destination_camera_id: Optional[uuid.UUID] = None,
+        source_camera_id: uuid.UUID | None = None,
+        destination_camera_id: uuid.UUID | None = None,
     ) -> TravelTimeStatsResponse:
         """Calculate mean, median, p85, p95, min, max travel times between camera pairs."""
         # Query camera connections
@@ -256,7 +252,9 @@ class AnalyticsService:
         if source_camera_id:
             conn_query = conn_query.where(CameraConnection.source_camera_id == source_camera_id)
         if destination_camera_id:
-            conn_query = conn_query.where(CameraConnection.destination_camera_id == destination_camera_id)
+            conn_query = conn_query.where(
+                CameraConnection.destination_camera_id == destination_camera_id
+            )
 
         connections = (await self._session.execute(conn_query)).scalars().all()
         pairs_stats: list[PairTravelTime] = []
@@ -276,7 +274,9 @@ class AnalyticsService:
             durations = [float(p.segment_duration_s) for p in pts if p.segment_duration_s]
             if not durations:
                 # If no real-time samples, fallback to connection bounds
-                avg_s = float(conn.avg_travel_time_s or (conn.min_travel_time_s + conn.max_travel_time_s) / 2)
+                avg_s = float(
+                    conn.avg_travel_time_s or (conn.min_travel_time_s + conn.max_travel_time_s) / 2
+                )
                 min_s = float(conn.min_travel_time_s)
                 max_s = float(conn.max_travel_time_s)
                 pairs_stats.append(
@@ -284,7 +284,9 @@ class AnalyticsService:
                         source_camera_id=conn.source_camera_id,
                         source_camera_name=conn.source_camera.name if conn.source_camera else None,
                         destination_camera_id=conn.destination_camera_id,
-                        destination_camera_name=conn.destination_camera.name if conn.destination_camera else None,
+                        destination_camera_name=conn.destination_camera.name
+                        if conn.destination_camera
+                        else None,
                         sample_count=0,
                         mean_travel_time_seconds=avg_s,
                         median_travel_time_seconds=avg_s,
@@ -301,7 +303,9 @@ class AnalyticsService:
                         source_camera_id=conn.source_camera_id,
                         source_camera_name=conn.source_camera.name if conn.source_camera else None,
                         destination_camera_id=conn.destination_camera_id,
-                        destination_camera_name=conn.destination_camera.name if conn.destination_camera else None,
+                        destination_camera_name=conn.destination_camera.name
+                        if conn.destination_camera
+                        else None,
                         sample_count=len(durations),
                         mean_travel_time_seconds=round(float(np.mean(arr)), 2),
                         median_travel_time_seconds=round(float(np.median(arr)), 2),
@@ -357,7 +361,9 @@ class AnalyticsService:
             )
 
         avg_ci = round(float(np.mean(indicators)), 2) if indicators else 1.0
-        overall_status = "free_flow" if avg_ci <= 1.0 else ("moderate" if avg_ci <= 1.3 else "heavy")
+        overall_status = (
+            "free_flow" if avg_ci <= 1.0 else ("moderate" if avg_ci <= 1.3 else "heavy")
+        )
 
         return CongestionReportResponse(
             timestamp=now,

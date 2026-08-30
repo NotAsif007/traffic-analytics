@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
@@ -47,8 +47,11 @@ class Trajectory(UUIDMixin, TimestampMixin, Base):
 
     # Human/system reference, e.g. "TRJ-20260830-0001"
     trajectory_id: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, index=True,
-        comment="Human-readable trajectory identifier"
+        String(64),
+        nullable=False,
+        unique=True,
+        index=True,
+        comment="Human-readable trajectory identifier",
     )
 
     vehicle_identity_id: Mapped[uuid.UUID] = mapped_column(
@@ -61,57 +64,69 @@ class Trajectory(UUIDMixin, TimestampMixin, Base):
     start_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True
     )
-    end_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, index=True
-    )
+    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
 
     status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="active", index=True,
-        comment="active | completed | terminated"
+        String(32),
+        nullable=False,
+        default="active",
+        index=True,
+        comment="active | completed | terminated",
     )
 
     confidence: Mapped[float] = mapped_column(
-        Numeric(5, 4), nullable=False, default=0.8,
-        comment="Overall trajectory confidence based on sightings and route feasibility"
+        Numeric(5, 4),
+        nullable=False,
+        default=0.8,
+        comment="Overall trajectory confidence based on sightings and route feasibility",
     )
 
     # Route metrics
     total_distance_m: Mapped[float] = mapped_column(
-        Float, nullable=False, default=0.0,
-        comment="Total accumulated distance along the road network in meters"
+        Float,
+        nullable=False,
+        default=0.0,
+        comment="Total accumulated distance along the road network in meters",
     )
 
     total_travel_time_s: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0,
-        comment="Total elapsed time in seconds from first to last sighting"
+        Integer,
+        nullable=False,
+        default=0,
+        comment="Total elapsed time in seconds from first to last sighting",
     )
 
     average_speed_kmh: Mapped[float | None] = mapped_column(
-        Numeric(6, 2), nullable=True,
-        comment="Average journey speed in km/h"
+        Numeric(6, 2), nullable=True, comment="Average journey speed in km/h"
     )
 
     points_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=1,
-        comment="Number of camera sightings along this trajectory"
+        Integer,
+        nullable=False,
+        default=1,
+        comment="Number of camera sightings along this trajectory",
     )
 
     # Ordered list of camera UUIDs (as strings) and names for fast queries
     ordered_camera_ids: Mapped[list] = mapped_column(
-        JSONB, nullable=False, default=list,
-        comment="Ordered list of camera UUIDs visited along this trajectory"
+        JSONB,
+        nullable=False,
+        default=list,
+        comment="Ordered list of camera UUIDs visited along this trajectory",
     )
 
     ordered_camera_names: Mapped[list] = mapped_column(
-        JSONB, nullable=False, default=list,
-        comment="Ordered list of camera identifiers/names (e.g. ['C01', 'C03', 'C06'])"
+        JSONB,
+        nullable=False,
+        default=list,
+        comment="Ordered list of camera identifiers/names (e.g. ['C01', 'C03', 'C06'])",
     )
 
     # PostGIS LineString geometry connecting camera GPS coordinates
     route_geometry: Mapped[object | None] = mapped_column(
         Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
         nullable=True,
-        comment="Spatial PostGIS LineString geometry representing the route path"
+        comment="Spatial PostGIS LineString geometry representing the route path",
     )
 
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
@@ -173,8 +188,7 @@ class TrajectoryPoint(UUIDMixin, TimestampMixin, Base):
     )
 
     sequence_order: Mapped[int] = mapped_column(
-        Integer, nullable=False,
-        comment="1-based chronological sequence order (1, 2, 3...)"
+        Integer, nullable=False, comment="1-based chronological sequence order (1, 2, 3...)"
     )
 
     camera_id: Mapped[uuid.UUID] = mapped_column(
@@ -198,9 +212,7 @@ class TrajectoryPoint(UUIDMixin, TimestampMixin, Base):
         index=True,
     )
 
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, index=True
-    )
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
 
     plate_text: Mapped[str | None] = mapped_column(String(20), nullable=True)
     plate_confidence: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
@@ -208,18 +220,18 @@ class TrajectoryPoint(UUIDMixin, TimestampMixin, Base):
 
     # Segment transition from previous waypoint
     segment_distance_m: Mapped[float | None] = mapped_column(
-        Float, nullable=True,
-        comment="Distance in meters from the previous waypoint"
+        Float, nullable=True, comment="Distance in meters from the previous waypoint"
     )
 
     segment_duration_s: Mapped[float | None] = mapped_column(
-        Float, nullable=True,
-        comment="Duration in seconds from the previous waypoint"
+        Float, nullable=True, comment="Duration in seconds from the previous waypoint"
     )
 
     is_interpolated: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False,
-        comment="True if this point is an inferred intermediate hop along the road graph"
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="True if this point is an inferred intermediate hop along the road graph",
     )
 
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
@@ -227,7 +239,9 @@ class TrajectoryPoint(UUIDMixin, TimestampMixin, Base):
     # Relationships
     trajectory: Mapped[Trajectory] = relationship("Trajectory", back_populates="points")
     camera: Mapped[Camera] = relationship("Camera", lazy="select")
-    observation: Mapped[VehicleObservation | None] = relationship("VehicleObservation", lazy="select")
+    observation: Mapped[VehicleObservation | None] = relationship(
+        "VehicleObservation", lazy="select"
+    )
     track: Mapped[VehicleTrack | None] = relationship("VehicleTrack", lazy="select")
 
     __table_args__ = (

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,9 +19,7 @@ class BlacklistRepository(BaseRepository[BlacklistEntry]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def find_active_entries(
-        self, plate_text: Optional[str] = None
-    ) -> list[BlacklistEntry]:
+    async def find_active_entries(self, plate_text: str | None = None) -> list[BlacklistEntry]:
         query = select(BlacklistEntry).where(BlacklistEntry.is_active.is_(True))
         if plate_text:
             query = query.where(BlacklistEntry.plate_text == plate_text)
@@ -53,10 +50,14 @@ class BlacklistRepository(BaseRepository[BlacklistEntry]):
 
         total = (await self._session.execute(count_query)).scalar_one()
         rows = (
-            await self._session.execute(
-                query.order_by(BlacklistEntry.created_at.desc()).offset(offset).limit(limit)
+            (
+                await self._session.execute(
+                    query.order_by(BlacklistEntry.created_at.desc()).offset(offset).limit(limit)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows), total
 
 
@@ -66,7 +67,7 @@ class AlertRepository(BaseRepository[Alert]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session)
 
-    async def get_with_relations(self, alert_id: uuid.UUID) -> Optional[Alert]:
+    async def get_with_relations(self, alert_id: uuid.UUID) -> Alert | None:
         result = await self._session.execute(
             select(Alert)
             .where(Alert.id == alert_id)
@@ -112,8 +113,12 @@ class AlertRepository(BaseRepository[Alert]):
 
         total = (await self._session.execute(count_query)).scalar_one()
         rows = (
-            await self._session.execute(
-                query.order_by(Alert.created_at.desc()).offset(offset).limit(limit)
+            (
+                await self._session.execute(
+                    query.order_by(Alert.created_at.desc()).offset(offset).limit(limit)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows), total
