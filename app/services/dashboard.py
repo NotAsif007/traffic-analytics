@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
+import shapely.geometry
+from geoalchemy2.shape import to_shape
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -36,6 +38,45 @@ from app.schemas.dashboard import (
 from app.services.analytics import AnalyticsService
 
 logger = get_logger(__name__)
+
+
+def _extract_lat_lon(geom_elem) -> tuple[float, float]:
+    """Safely extract (latitude, longitude) from a PostGIS POINT geometry or mock object."""
+    if not geom_elem:
+        return 0.0, 0.0
+    if hasattr(geom_elem, "coordinates") and isinstance(geom_elem.coordinates, list | tuple) and len(geom_elem.coordinates) >= 2:
+        return float(geom_elem.coordinates[1]), float(geom_elem.coordinates[0])
+    try:
+        shp = to_shape(geom_elem)
+        return float(shp.y), float(shp.x)
+    except Exception:
+        return 0.0, 0.0
+
+
+def _extract_geojson_mapping(geom_elem) -> dict:
+    """Safely extract GeoJSON dictionary from a PostGIS LINESTRING geometry or mock object."""
+    if not geom_elem:
+        return {"type": "LineString", "coordinates": []}
+    if hasattr(geom_elem, "model_dump") and callable(geom_elem.model_dump):
+        return geom_elem.model_dump()
+    try:
+        shp = to_shape(geom_elem)
+        return shapely.geometry.mapping(shp)
+    except Exception:
+        return {"type": "LineString", "coordinates": []}
+
+
+def _extract_line_coords(geom_elem) -> list[list[float]]:
+    """Safely extract [[lat, lon], ...] from a PostGIS LINESTRING geometry or mock object."""
+    if not geom_elem:
+        return []
+    if hasattr(geom_elem, "coordinates") and isinstance(geom_elem.coordinates, list | tuple):
+        return [list(c) for c in geom_elem.coordinates]
+    try:
+        shp = to_shape(geom_elem)
+        return [[float(pt[1]), float(pt[0])] for pt in shp.coords]
+    except Exception:
+        return []
 
 
 class DashboardService:
@@ -98,22 +139,28 @@ class DashboardService:
         traffic_level = "low"
         if len(hotspots) >= 3 or congest_report.summary_congestion_index > 1.5:
             traffic_level = "congested"
-        elif len(hotspots) >= 1 or congest_report.summary_congestion_index > 1.2:
-            traffic_level = "heavy"
-        elif obs_today > 100:
+        elif len(hotspots) >= 1 or congest_report.summary_congestion_index > 1.2 or obs_today > 100:
             traffic_level = "moderate"
 
-        # 5. Recent activity
+        # 5. Recent Activity Feed
+        recent_obs_q = (
+            select(VehicleObservation)
+            .options(selectinload(VehicleObservation.camera))
+            .order_by(VehicleObservation.observed_at.desc())
+            .limit(10)
+        )
+        recent_obs = list((await self._session.execute(recent_obs_q)).scalars().all())
         recent_activity: list[RecentActivityItem] = []
-        for a in sorted(active_alerts, key=lambda x: x.created_at, reverse=True)[:5]:
+        for obs in recent_obs:
+            cam_name = obs.camera.name if obs.camera else f"CAM-{str(obs.camera_id)[:4]}"
             recent_activity.append(
                 RecentActivityItem(
-                    activity_type="ALERT",
-                    title=a.title,
-                    description=a.description,
-                    timestamp=a.created_at,
-                    camera_name=a.camera.name if a.camera else None,
-                    severity=a.severity,
+                    activity_type="OBSERVATION",
+                    title=f"Vehicle Sighting [{obs.plate_text or 'UNREAD'}]",
+                    description=f"Observed {obs.vehicle_class or 'vehicle'} ({obs.vehicle_color or 'unknown color'}) at {cam_name}",
+                    timestamp=obs.observed_at,
+                    camera_name=cam_name,
+                    severity="low",
                 )
             )
 
@@ -159,8 +206,7 @@ class DashboardService:
             last_seen = (await self._session.execute(last_q)).scalar_one()
 
             intensity = "high" if obs_cnt > 50 else "moderate" if obs_cnt > 10 else "low"
-            lat = cam.location.coordinates[1] if cam.location else 0.0
-            lon = cam.location.coordinates[0] if cam.location else 0.0
+            lat, lon = _extract_lat_lon(cam.location)
 
             map_cameras.append(
                 MapCameraNode(
@@ -180,9 +226,7 @@ class DashboardService:
         roads = list(roads_result.scalars().all())
         map_roads: list[MapRoadSegment] = []
         for r in roads:
-            geom = (
-                r.geometry.model_dump() if r.geometry else {"type": "LineString", "coordinates": []}
-            )
+            geom = _extract_geojson_mapping(r.geometry)
             map_roads.append(
                 MapRoadSegment(
                     id=r.id,
@@ -203,9 +247,7 @@ class DashboardService:
         map_trajs: list[MapTrajectoryLine] = []
         for t in active_trajs:
             plate = t.identity.primary_plate if t.identity else None
-            coords: list[list[float]] = []
-            if t.route_geometry:
-                coords = [list(c) for c in t.route_geometry.coordinates]
+            coords = _extract_line_coords(t.route_geometry)
 
             map_trajs.append(
                 MapTrajectoryLine(
@@ -231,8 +273,7 @@ class DashboardService:
         active_alerts = list(alerts_result.scalars().all())
         map_alerts: list[MapAlertMarker] = []
         for a in active_alerts:
-            lat = a.camera.location.coordinates[1] if a.camera and a.camera.location else None
-            lon = a.camera.location.coordinates[0] if a.camera and a.camera.location else None
+            lat, lon = _extract_lat_lon(a.camera.location) if a.camera else (None, None)
             cam_name = a.camera.name if a.camera else None
             map_alerts.append(
                 MapAlertMarker(
@@ -304,8 +345,7 @@ class DashboardService:
         for idx, obs in enumerate(sorted_obs):
             cam = await self._session.get(Camera, obs.camera_id)
             cam_name = cam.name if cam else f"CAM-{str(obs.camera_id)[:4]}"
-            lat = cam.location.coordinates[1] if cam and cam.location else 0.0
-            lon = cam.location.coordinates[0] if cam and cam.location else 0.0
+            lat, lon = _extract_lat_lon(cam.location) if cam else (0.0, 0.0)
 
             last_cam_name = cam_name
             last_coords = [lon, lat]
@@ -355,8 +395,7 @@ class DashboardService:
         alerts = list(alerts_result.scalars().all())
         map_alerts: list[MapAlertMarker] = []
         for a in alerts:
-            lat = a.camera.location.coordinates[1] if a.camera and a.camera.location else None
-            lon = a.camera.location.coordinates[0] if a.camera and a.camera.location else None
+            lat, lon = _extract_lat_lon(a.camera.location) if a.camera else (None, None)
             map_alerts.append(
                 MapAlertMarker(
                     id=a.id,
@@ -406,8 +445,7 @@ class DashboardService:
 
         cameras_involved: list[CameraBrief] = []
         if alert.camera:
-            lat = alert.camera.location.coordinates[1] if alert.camera.location else 0.0
-            lon = alert.camera.location.coordinates[0] if alert.camera.location else 0.0
+            lat, lon = _extract_lat_lon(alert.camera.location)
             cameras_involved.append(
                 CameraBrief(
                     id=alert.camera.id,
@@ -422,9 +460,7 @@ class DashboardService:
         if alert.trajectory:
             t = alert.trajectory
             plate = alert.vehicle_identity.primary_plate if alert.vehicle_identity else None
-            coords: list[list[float]] = []
-            if t.route_geometry:
-                coords = [list(c) for c in t.route_geometry.coordinates]
+            coords = _extract_line_coords(t.route_geometry)
             traj_summary = MapTrajectoryLine(
                 trajectory_id=t.id,
                 vehicle_identity_id=t.vehicle_identity_id,
@@ -482,9 +518,9 @@ class DashboardService:
         )
         hourly_trend = [
             {
-                "bucket": b.timestamp_bucket.isoformat(),
-                "total": b.total_volume,
-                "classes": b.by_vehicle_class,
+                "bucket": b.bucket_start.isoformat(),
+                "total": b.vehicle_count,
+                "classes": b.vehicle_class_counts,
             }
             for b in vol_resp.buckets
         ]
@@ -514,11 +550,31 @@ class DashboardService:
                 )
 
         # 4. Top Routes & OD Flows
-        routes_resp = await self._analytics.get_route_frequency(limit=5)
-        top_routes = [r.model_dump() for r in routes_resp.routes]
+        routes_resp = await self._analytics.get_route_frequency(
+            start_time=one_day_ago, end_time=now, limit=5
+        )
+        top_routes = [
+            {
+                "route_key": r.route_summary,
+                "camera_sequence": r.route_camera_names or [r.route_summary],
+                "frequency_count": r.trip_count,
+                "avg_travel_time_s": int(r.average_duration_seconds),
+            }
+            for r in routes_resp.top_routes
+        ]
 
-        od_resp = await self._analytics.get_od_matrix(limit=5)
-        top_od = [od.model_dump() for od in od_resp.matrix]
+        od_resp = await self._analytics.get_od_matrix(
+            start_time=one_day_ago, end_time=now
+        )
+        top_od = [
+            {
+                "origin_zone": od.origin_camera_name or "Origin Node",
+                "destination_zone": od.destination_camera_name or "Destination Node",
+                "trip_count": od.trip_count,
+                "avg_travel_time_s": int(od.average_duration_seconds),
+            }
+            for od in od_resp.matrix[:5]
+        ]
 
         return DashboardAnalyticsSummaryResponse(
             generated_at=now,

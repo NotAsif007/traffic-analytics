@@ -62,27 +62,7 @@ services:
     build:
       context: .
       target: runtime
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        python -c \"
-import asyncio, sys
-import asyncpg
-async def wait():
-    for i in range(30):
-        try:
-            conn = await asyncpg.connect('${ALEMBIC_DATABASE_URL:-postgresql://traffic_user:traffic_pass@db:5432/traffic_db}'.replace('postgresql+psycopg2://', 'postgresql://').replace('postgresql+asyncpg://', 'postgresql://'))
-            await conn.close()
-            print('Database ready.')
-            return
-        except Exception as e:
-            print(f'Attempt {i+1}/30: {e}')
-            await asyncio.sleep(2)
-    sys.exit(1)
-asyncio.run(wait())
-        \" &&
-        alembic upgrade head
-      "
+    command: alembic upgrade head
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://traffic_user:traffic_pass@db:5432/traffic_db}
       ALEMBIC_DATABASE_URL: ${ALEMBIC_DATABASE_URL:-postgresql+psycopg2://traffic_user:traffic_pass@db:5432/traffic_db}

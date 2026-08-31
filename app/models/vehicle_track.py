@@ -115,14 +115,14 @@ class VehicleTrack(UUIDMixin, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    camera: Mapped[Camera] = relationship("Camera", lazy="select")
+    camera: Mapped[Camera] = relationship("Camera", lazy="selectin")
 
     track_points: Mapped[list[TrackPoint]] = relationship(
         "TrackPoint",
         back_populates="track",
         cascade="all, delete-orphan",
         order_by="TrackPoint.timestamp.asc()",
-        lazy="select",
+        lazy="selectin",
     )
 
     __table_args__ = (
@@ -212,9 +212,9 @@ class TrackPoint(UUIDMixin, TimestampMixin, Base):
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 
     # Relationships
-    track: Mapped[VehicleTrack] = relationship("VehicleTrack", back_populates="track_points")
+    track: Mapped[VehicleTrack] = relationship("VehicleTrack", back_populates="track_points", lazy="selectin")
     observation: Mapped[VehicleObservation | None] = relationship(
-        "VehicleObservation", lazy="select"
+        "VehicleObservation", lazy="selectin"
     )
 
     __table_args__ = (

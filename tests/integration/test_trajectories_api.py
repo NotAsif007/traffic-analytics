@@ -59,3 +59,22 @@ async def test_get_nonexistent_trajectory_returns_404(client: AsyncClient) -> No
     fake_id = uuid.uuid4()
     response = await client.get(f"/api/v1/trajectories/{fake_id}")
     assert response.status_code == 404
+
+
+@pytest.mark.integration
+async def test_trajectory_prediction_endpoint(client: AsyncClient) -> None:
+    """GET /trajectories/{id}/prediction returns forward predictions with next hops and ETAs."""
+    # First get an existing trajectory from the database
+    res = await client.get("/api/v1/trajectories/")
+    assert res.status_code == 200
+    items = res.json()["items"]
+    if items:
+        traj_id = items[0]["id"]
+        pred_res = await client.get(f"/api/v1/trajectories/{traj_id}/prediction")
+        assert pred_res.status_code == 200
+        data = pred_res.json()
+        assert "predicted_next_hops" in data
+        assert "deviation_risk_level" in data
+        assert "forecast_method" in data
+        assert len(data["predicted_next_hops"]) >= 1
+

@@ -202,7 +202,7 @@ class VehicleObservation(UUIDMixin, TimestampMixin, Base):
     # Relationships
     # -----------------------------------------------------------------------
 
-    camera: Mapped[Camera] = relationship("Camera", lazy="select")
+    camera: Mapped[Camera] = relationship("Camera", lazy="selectin")
 
     # -----------------------------------------------------------------------
     # Constraints and indexes

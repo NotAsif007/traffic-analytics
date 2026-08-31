@@ -66,3 +66,23 @@ class PlateOCR(ABC):
         Returns None if OCR fails or text cannot be recognized.
         """
         pass
+
+
+class VehicleReIdentifier(ABC):
+    """
+    Abstract interface for vehicle appearance feature extractors (e.g. OSNet, ResNet50-ReID).
+
+    Generates L2-normalized feature vectors representing the visual appearance of a vehicle.
+    """
+
+    @abstractmethod
+    async def extract_embedding(
+        self,
+        image_or_crop_path: str,
+    ) -> list[float]:
+        """
+        Extract normalized visual appearance feature embedding from a vehicle image crop.
+        Returns a float vector (e.g. 512-d or 128-d).
+        """
+        pass
+

@@ -70,7 +70,7 @@ class BlacklistEntry(UUIDMixin, TimestampMixin, Base):
 
     # Relationships
     alerts: Mapped[list[Alert]] = relationship(
-        "Alert", back_populates="blacklist_entry", lazy="select"
+        "Alert", back_populates="blacklist_entry", lazy="selectin"
     )
 
     __table_args__ = (
@@ -195,16 +195,16 @@ class Alert(UUIDMixin, TimestampMixin, Base):
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 
     # Relationships
-    camera: Mapped[Camera | None] = relationship("Camera", lazy="select")
+    camera: Mapped[Camera | None] = relationship("Camera", lazy="selectin")
     vehicle_identity: Mapped[VehicleIdentity | None] = relationship(
-        "VehicleIdentity", lazy="select"
+        "VehicleIdentity", lazy="selectin"
     )
-    trajectory: Mapped[Trajectory | None] = relationship("Trajectory", lazy="select")
+    trajectory: Mapped[Trajectory | None] = relationship("Trajectory", lazy="selectin")
     observation: Mapped[VehicleObservation | None] = relationship(
-        "VehicleObservation", lazy="select"
+        "VehicleObservation", lazy="selectin"
     )
     blacklist_entry: Mapped[BlacklistEntry | None] = relationship(
-        "BlacklistEntry", back_populates="alerts", lazy="select"
+        "BlacklistEntry", back_populates="alerts", lazy="selectin"
     )
 
     __table_args__ = (

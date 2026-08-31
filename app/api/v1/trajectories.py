@@ -13,6 +13,7 @@ from app.schemas.common import PaginatedResponse
 from app.schemas.trajectory import (
     TrajectoryDetailResponse,
     TrajectoryFilters,
+    TrajectoryPredictionResponse,
     TrajectoryResponse,
     TrajectoryTimelineResponse,
 )
@@ -85,3 +86,16 @@ async def get_trajectory_timeline(
     svc: TrajectoryServiceDep,
 ) -> TrajectoryTimelineResponse:
     return await svc.get_timeline(trajectory_id)
+
+
+@router.get(
+    "/{trajectory_id}/prediction",
+    response_model=TrajectoryPredictionResponse,
+    summary="Forecast future vehicle trajectory, next camera intercepts, and ETAs",
+)
+async def get_trajectory_prediction(
+    trajectory_id: uuid.UUID,
+    svc: TrajectoryServiceDep,
+) -> TrajectoryPredictionResponse:
+    return await svc.predict_next_locations(trajectory_id)
+

@@ -9,6 +9,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import DBSession
+from app.api.v1.events import get_event_bus
+from app.events.contracts import DomainEvent, EventType
 from app.schemas.common import PaginatedResponse
 from app.schemas.vehicle_observation import (
     BulkObservationRequest,
@@ -49,7 +51,17 @@ async def create_observation(
     payload: VehicleObservationCreate,
     svc: ObsServiceDep,
 ) -> VehicleObservationResponse:
-    return await svc.create_observation(payload)
+    obs = await svc.create_observation(payload)
+    bus = get_event_bus()
+    await bus.publish(
+        DomainEvent(
+            event_type=EventType.VEHICLE_OBSERVED.value,
+            source=payload.source,
+            payload=obs.model_dump(mode="json"),
+            idempotency_key=f"obs-{payload.source}-{payload.source_observation_id}",
+        )
+    )
+    return obs
 
 
 @router.get(
@@ -152,4 +164,15 @@ async def bulk_ingest_observations(
     request: BulkObservationRequest,
     svc: ObsServiceDep,
 ) -> BulkObservationResponse:
-    return await svc.bulk_ingest(request)
+    res = await svc.bulk_ingest(request)
+    bus = get_event_bus()
+    for acc in res.accepted:
+        await bus.publish(
+            DomainEvent(
+                event_type=EventType.VEHICLE_OBSERVED.value,
+                source=acc.source,
+                payload=acc.model_dump(mode="json"),
+                idempotency_key=f"obs-{acc.source}-{acc.source_observation_id}",
+            )
+        )
+    return res

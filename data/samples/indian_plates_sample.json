@@ -1,0 +1,77 @@
+{
+  "dataset": "Indian_License_Plates",
+  "camera_id": "11111111-1111-1111-1111-111111111103",
+  "camera_name": "ANPR-CHECKPOINT-MG-ROAD",
+  "samples": [
+    {
+      "vehicle_id": "LP-IND-01",
+      "plate_number": "KA01AB1234",
+      "is_hsrp": true,
+      "layout": "single_line",
+      "vehicle_class": "car",
+      "vehicle_color": "white",
+      "detection_confidence": 0.99,
+      "ocr_confidence": 0.98,
+      "vehicle_bbox": [0.15, 0.20, 0.75, 0.80],
+      "plate_bbox": [0.38, 0.58, 0.52, 0.65],
+      "timestamp": "2026-08-30T09:10:00Z",
+      "noisy_ocr_variant": "KA01AB1234"
+    },
+    {
+      "vehicle_id": "LP-IND-02",
+      "plate_number": "DL03TH1234",
+      "is_hsrp": true,
+      "layout": "single_line",
+      "vehicle_class": "car",
+      "vehicle_color": "black",
+      "detection_confidence": 0.98,
+      "ocr_confidence": 0.96,
+      "vehicle_bbox": [0.20, 0.15, 0.80, 0.85],
+      "plate_bbox": [0.42, 0.60, 0.58, 0.68],
+      "timestamp": "2026-08-30T09:12:00Z",
+      "noisy_ocr_variant": "DL03TH1284"
+    },
+    {
+      "vehicle_id": "LP-IND-03",
+      "plate_number": "MH12DE5678",
+      "is_hsrp": true,
+      "layout": "single_line",
+      "vehicle_class": "truck",
+      "vehicle_color": "yellow",
+      "detection_confidence": 0.97,
+      "ocr_confidence": 0.94,
+      "vehicle_bbox": [0.10, 0.10, 0.85, 0.90],
+      "plate_bbox": [0.35, 0.65, 0.55, 0.72],
+      "timestamp": "2026-08-30T09:15:00Z",
+      "noisy_ocr_variant": "MH12DE567B"
+    },
+    {
+      "vehicle_id": "LP-IND-04",
+      "plate_number": "TN09AB9999",
+      "is_hsrp": false,
+      "layout": "double_line",
+      "vehicle_class": "motorcycle",
+      "vehicle_color": "red",
+      "detection_confidence": 0.96,
+      "ocr_confidence": 0.92,
+      "vehicle_bbox": [0.30, 0.35, 0.50, 0.75],
+      "plate_bbox": [0.36, 0.60, 0.44, 0.70],
+      "timestamp": "2026-08-30T09:18:00Z",
+      "noisy_ocr_variant": "TN09AB9999"
+    },
+    {
+      "vehicle_id": "LP-IND-05",
+      "plate_number": "UP32AZ0001",
+      "is_hsrp": true,
+      "layout": "single_line",
+      "vehicle_class": "car",
+      "vehicle_color": "silver",
+      "detection_confidence": 0.99,
+      "ocr_confidence": 0.97,
+      "vehicle_bbox": [0.25, 0.25, 0.70, 0.75],
+      "plate_bbox": [0.40, 0.55, 0.55, 0.62],
+      "timestamp": "2026-08-30T09:20:00Z",
+      "noisy_ocr_variant": "UP32AZOO01"
+    }
+  ]
+}

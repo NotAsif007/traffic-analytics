@@ -51,14 +51,23 @@ target_metadata = Base.metadata
 # Read DSN from environment (never from alembic.ini)
 # ---------------------------------------------------------------------------
 def get_url() -> str:
+    from dotenv import load_dotenv
+    load_dotenv()
     url = os.environ.get("ALEMBIC_DATABASE_URL")
+    if not url:
+        try:
+            from app.config import get_settings
+            settings = get_settings()
+            url = settings.ALEMBIC_DATABASE_URL
+        except Exception:
+            pass
     if not url:
         raise ValueError(
             "ALEMBIC_DATABASE_URL environment variable is not set. "
             "Set it to a synchronous psycopg2 DSN: "
             "postgresql+psycopg2://user:pass@host:port/db"
         )
-    return url
+    return str(url)
 
 
 # ---------------------------------------------------------------------------

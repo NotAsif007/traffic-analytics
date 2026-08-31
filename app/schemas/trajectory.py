@@ -147,6 +147,39 @@ class TrajectoryTimelineResponse(AppBaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Predictive Forward Trajectory Schemas
+# ---------------------------------------------------------------------------
+
+
+class PredictedNextHop(AppBaseModel):
+    """Forecasted candidate next camera with arrival time and probability."""
+
+    camera_id: uuid.UUID
+    camera_name: str
+    road_name: str | None = None
+    probability: float = Field(..., ge=0.0, le=1.0, description="Markov transition probability [0-1]")
+    distance_meters: float
+    estimated_travel_time_seconds: float
+    estimated_arrival_time: datetime
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
+
+
+class TrajectoryPredictionResponse(AppBaseModel):
+    """Forward trajectory forecast predicting next camera intercepts and ETAs."""
+
+    trajectory_id: str
+    vehicle_identity_id: uuid.UUID
+    current_camera_id: uuid.UUID
+    current_camera_name: str
+    last_seen_timestamp: datetime
+    current_speed_kmh: float | None = None
+    predicted_next_hops: list[PredictedNextHop] = Field(default_factory=list)
+    predicted_destination_corridor: str | None = None
+    deviation_risk_level: str = Field(default="LOW", description="LOW | MEDIUM | HIGH")
+    forecast_method: str = "Markov Spatio-Temporal Graph Propagation"
+
+
+# ---------------------------------------------------------------------------
 # Query Filters
 # ---------------------------------------------------------------------------
 
@@ -158,3 +191,4 @@ class TrajectoryFilters(AppBaseModel):
     min_confidence: float | None = Field(None, ge=0.0, le=1.0)
     start_after: datetime | None = None
     end_before: datetime | None = None
+

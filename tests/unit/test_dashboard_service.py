@@ -55,8 +55,11 @@ async def test_get_city_overview(dashboard_service: DashboardService) -> None:
     mock_alerts_result = MagicMock()
     mock_alerts_result.scalars().all.return_value = []
 
+    mock_recent_result = MagicMock()
+    mock_recent_result.scalars().all.return_value = []
+
     dashboard_service._session.execute = AsyncMock(
-        side_effect=[mock_cameras_result, mock_scalar_result, mock_alerts_result]
+        side_effect=[mock_cameras_result, mock_scalar_result, mock_alerts_result, mock_recent_result]
     )
 
     with patch.object(

@@ -90,6 +90,11 @@ async def investigate_alert(
 
 
 @router.get(
+    "/analytics",
+    response_model=DashboardAnalyticsSummaryResponse,
+    summary="Get consolidated traffic analytics summary (alias)",
+)
+@router.get(
     "/analytics/summary",
     response_model=DashboardAnalyticsSummaryResponse,
     summary="Get consolidated traffic analytics summary for Executive Dashboard charts",

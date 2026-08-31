@@ -107,7 +107,7 @@ class VehicleIdentity(UUIDMixin, TimestampMixin, Base):
         "VehicleMatch",
         back_populates="identity",
         cascade="all, delete-orphan",
-        lazy="select",
+        lazy="selectin",
     )
 
     __table_args__ = (
@@ -229,24 +229,24 @@ class VehicleMatch(UUIDMixin, TimestampMixin, Base):
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 
     # Relationships
-    identity: Mapped[VehicleIdentity] = relationship("VehicleIdentity", back_populates="matches")
+    identity: Mapped[VehicleIdentity] = relationship("VehicleIdentity", back_populates="matches", lazy="selectin")
     source_camera: Mapped[Camera] = relationship(
-        "Camera", foreign_keys=[source_camera_id], lazy="select"
+        "Camera", foreign_keys=[source_camera_id], lazy="selectin"
     )
     target_camera: Mapped[Camera] = relationship(
-        "Camera", foreign_keys=[target_camera_id], lazy="select"
+        "Camera", foreign_keys=[target_camera_id], lazy="selectin"
     )
     source_observation: Mapped[VehicleObservation | None] = relationship(
-        "VehicleObservation", foreign_keys=[source_observation_id], lazy="select"
+        "VehicleObservation", foreign_keys=[source_observation_id], lazy="selectin"
     )
     target_observation: Mapped[VehicleObservation | None] = relationship(
-        "VehicleObservation", foreign_keys=[target_observation_id], lazy="select"
+        "VehicleObservation", foreign_keys=[target_observation_id], lazy="selectin"
     )
     source_track: Mapped[VehicleTrack | None] = relationship(
-        "VehicleTrack", foreign_keys=[source_track_id], lazy="select"
+        "VehicleTrack", foreign_keys=[source_track_id], lazy="selectin"
     )
     target_track: Mapped[VehicleTrack | None] = relationship(
-        "VehicleTrack", foreign_keys=[target_track_id], lazy="select"
+        "VehicleTrack", foreign_keys=[target_track_id], lazy="selectin"
     )
 
     __table_args__ = (
